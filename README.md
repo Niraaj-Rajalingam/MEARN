@@ -1,6 +1,10 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Project Management
+
+This project utilizes [GitHub Projects](https://github.com/users/Niraaj-Rajalingam/projects/1) and (GitHub Issues)[https://github.com/Niraaj-Rajalingam/MEARN/issues] for Project Management.
 
 ## Getting Started
+
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 First, run the development server:
 

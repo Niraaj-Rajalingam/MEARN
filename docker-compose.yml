@@ -1,0 +1,17 @@
+services:
+  mearn:
+    image: mearn-image
+    container_name: mearn
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    command: ["npm", "run", "dev"]
+    ports:
+      - "3000:3000"
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
+    environment:
+      - NODE_ENV=development

@@ -1,12 +1,11 @@
 services:
-  mearn:
-    image: mearn-image
-    container_name: mearn-container
+  mearn-app:
+    container_name: mearn-app
     build:
       context: .
-      dockerfile: ./Dockerfile.dev
+      dockerfile: ./Dockerfile.app.dev
     depends_on:
-      pg-db:
+      mearn-database:
         condition: service_healthy
         restart: true
     ports:
@@ -21,13 +20,16 @@ services:
     environment:
       - NODE_ENV=development
 
-  pg-db:
-    image: postgres:17
+  mearn-database:
+    container_name: mearn-database
+    build:
+      context: .
+      dockerfile: ./Dockerfile.db.dev
     restart: always
     ports:
       - "5432:5432"
     volumes:
-      - pg-db-data:/var/lib/postgresql/data
+      - mearn-database-data:/var/lib/postgresql/data
     environment:
       - PGUSER=postgres
       - POSTGRES_USER=postgres
@@ -39,5 +41,5 @@ services:
       retries: 3
 
 volumes:
-  pg-db-data:
-    name: "pg-db-data"
+  mearn-database-data:
+    name: "mearn-database-data"

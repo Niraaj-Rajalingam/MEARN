@@ -1,15 +1,14 @@
 services:
   mearn:
     image: mearn-image
-    container_name: mearn
+    container_name: mearn-container
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: ./Dockerfile.dev
     depends_on:
       pg-db:
         condition: service_healthy
         restart: true
-    command: ["npm", "run", "dev"]
     ports:
       - "3000:3000"
     develop:

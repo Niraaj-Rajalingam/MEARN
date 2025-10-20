@@ -11,3 +11,5 @@ RUN npx next telemetry disable
 COPY --chown=app:app . .
 
 EXPOSE 3000
+
+CMD [ "npm", "run", "dev" ]

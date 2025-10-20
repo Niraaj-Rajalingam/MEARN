@@ -17,6 +17,7 @@ Note that this development environment uses a postgres database that works out o
 
 - Data is persisted across sessions in the `pg-db-data` docker volume. If you want to clear your database, simply delete the docker volume with `docker volume rm pg-db-data`.
 - The postgres database username is `postgres` and the password is `mearn-app-db`.
+- You should be able to access the database using any GUI RDBMS software at `localhost:5432` when the app is running.
 
 ## Deploy on Vercel
 

@@ -11,7 +11,12 @@ This project utilizes [GitHub Projects](https://github.com/users/Niraaj-Rajaling
 3. Run `docker compose up --watch` to actually run the web app in development mode at http://localhost:3000. Hot reload is enabled with the `--watch` command so any changes to code will be reflected in the web app on file save.
 4. If you modify your node dependencies, simply cancel (Ctrl+C a few times) and restart the `docker compose up --watch` command to reload your dependencies.
 
-Note that this development environment uses a postgres database, with the data persisted across sessions in the `pg-db-data` docker volume. If you want to clear your database, simply delete the docker volume with `docker volume rm pg-db-data`.
+### Postgres database
+
+Note that this development environment uses a postgres database that works out of the box:
+
+- Data is persisted across sessions in the `pg-db-data` docker volume. If you want to clear your database, simply delete the docker volume with `docker volume rm pg-db-data`.
+- The postgres database username is `postgres` and the password is `mearn-app-db`.
 
 ## Deploy on Vercel
 

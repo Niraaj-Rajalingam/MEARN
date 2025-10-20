@@ -19,7 +19,13 @@ CREATE TABLE IF NOT EXISTS tamagotchis (
     image_path TEXT
 );
 
-INSERT INTO tamagotchis (image_path) VALUES
-    ('test 1'),
-    ('test 2'),
-    ('test 3');
+INSERT INTO tamagotchis (user_uuid, image_path)
+SELECT u.user_uuid, t.image_path
+FROM users u
+JOIN (
+    VALUES
+        ('Niraaj', '/images/tamagotchi_1.jpg'),
+        ('Ridvik', '/images/tamagotchi_2.jpg'),
+        ('Eduardo Jose', '/images/tamagotchi_3.jpg')
+) AS t (first_name, image_path)
+ON u.first_name = t.first_name;

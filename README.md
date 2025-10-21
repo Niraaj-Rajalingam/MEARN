@@ -1,6 +1,6 @@
 ## Project management
 
-This project utilizes [GitHub Projects](https://github.com/users/Niraaj-Rajalingam/projects/1) and (GitHub Issues)[https://github.com/Niraaj-Rajalingam/MEARN/issues] for Project Management.
+This project utilizes [GitHub Projects](https://github.com/users/Niraaj-Rajalingam/projects/1) and [GitHub Issues](https://github.com/Niraaj-Rajalingam/MEARN/issues) for Project Management.
 
 ## Getting started for development
 

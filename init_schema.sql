@@ -3,9 +3,9 @@
 -- mearn-database-data volume in docker
 -- Then rerun docker compose up --watch to see changes
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION "uuid-ossp";
 
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
     user_uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     first_name TEXT,
     last_name TEXT
@@ -18,7 +18,7 @@ INSERT INTO users (first_name, last_name) VALUES
     ('Matthew', 'Grech'),
     ('Areeba', 'Mobeen');
 
-CREATE TABLE IF NOT EXISTS tamagotchis (
+CREATE TABLE tamagotchis (
     tamagotchi_uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_uuid UUID REFERENCES users (user_uuid),
     image_path TEXT

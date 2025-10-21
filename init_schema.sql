@@ -1,3 +1,8 @@
+-- This SQL script initializes the database for local development
+-- If you modify this script, delete your mearn-database container and
+-- mearn-database-data volume in docker
+-- Then rerun docker compose up --watch to see changes
+
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS users (

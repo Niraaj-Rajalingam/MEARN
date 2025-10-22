@@ -19,7 +19,7 @@ export const poolQuery = async (
     return result.rows;
   } catch (error) {
     console.log(`An error occurred when executing db query: \n${queryString}`);
-    console.log(`error: ${error}`);
+    console.log(`${error}`);
   }
 }
 
@@ -29,11 +29,15 @@ export const poolClientQuery = async (
 ): Promise<any[] | undefined> => {
   const client = await pool.connect();
   try {
+    await client.query('BEGIN;');
     const result = await client.query(queryString);
+    await client.query('COMMIT;');
+
     return result.rows;
   } catch (error) {
+    await client.query('ROLLBACK;');
     console.log(`An error occurred when executing db query: \n${queryString}`);
-    console.log(`error: ${error}`);
+    console.log(`${error}`);
   } finally {
     client.release();
   }

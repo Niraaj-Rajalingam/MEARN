@@ -11,7 +11,7 @@ export const pool = new Pool({
   connectionTimeoutMillis: 2000, // connection timeout
 });
 
-interface IPoolClientQueryProps {
+interface IPoolClientQueryParams {
   queryString: string;
   queryStringParams: (string | number | boolean)[]
 }
@@ -19,7 +19,7 @@ interface IPoolClientQueryProps {
 export const poolClientQuery = async ({
   queryString,
   queryStringParams
-}: IPoolClientQueryProps) => {
+}: IPoolClientQueryParams) => {
   const client = await pool.connect();
   try {
     const result = await client.query(queryString, queryStringParams);

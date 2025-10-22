@@ -1,13 +1,11 @@
-import { createPool } from "./database.service";
-
-interface ICreateTamagotchi {
+interface ICreateTamagotchiParams {
   user_uuid: string;
   image_path: string;
 }
 
-export const createTamagotchi = ({
+export const createTamagotchi = async ({
   user_uuid,
   image_path
-}: ICreateTamagotchi) => {
+}: ICreateTamagotchiParams) => {
     
 }

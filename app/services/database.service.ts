@@ -19,7 +19,8 @@ export const poolQuery = async (
     return result.rows;
   } catch (error) {
     console.log(`An error occurred when executing db query: \n${queryString}`);
-    console.log(`${error}`);
+    console.log(error);
+    throw 'A database error occurred';
   }
 }
 
@@ -37,7 +38,8 @@ export const poolClientQuery = async (
   } catch (error) {
     await client.query('ROLLBACK;');
     console.log(`An error occurred when executing db query: \n${queryString}`);
-    console.log(`${error}`);
+    console.log(error);
+    throw 'A database error occurred';
   } finally {
     client.release();
   }

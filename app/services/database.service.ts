@@ -3,7 +3,7 @@ import { Pool } from 'pg';
 const pool = new Pool({
   user: 'postgres',
   password: 'mearn-app-db',
-  host: 'localhost',
+  host: 'mearn-database', // needs to be the same as the docker container name
   port: 5432,
   database: 'postgres',
   max: 20, // max number of connections
@@ -19,6 +19,7 @@ export const poolQuery = async (
     return result.rows;
   } catch (error) {
     console.log(`An error occurred when executing db query: \n${queryString}`);
+    console.log(`error: ${error}`);
   }
 }
 
@@ -32,6 +33,7 @@ export const poolClientQuery = async (
     return result.rows;
   } catch (error) {
     console.log(`An error occurred when executing db query: \n${queryString}`);
+    console.log(`error: ${error}`);
   } finally {
     client.release();
   }

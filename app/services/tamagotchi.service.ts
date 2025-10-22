@@ -1,8 +1,9 @@
+import { UUID } from "crypto";
 import { Tamagotchi } from "../types/tamagotchi.type";
 import { poolClientQuery, poolQuery } from "./database.service";
 
 export const getTamagotchisForUser = async (
-  user_uuid: string
+  user_uuid: UUID
 ): Promise<Tamagotchi[] | undefined> => {
   const result: Tamagotchi[] | undefined = await poolQuery(
     `SELECT * FROM tamagotchis
@@ -13,7 +14,7 @@ export const getTamagotchisForUser = async (
 }
 
 export const createTamagotchiForUser = async (
-  user_uuid: string,
+  user_uuid: UUID,
   image_path: string
 ) => {
   await poolClientQuery(
@@ -29,7 +30,7 @@ export const createTamagotchiForUser = async (
 }
 
 export const updateTamagotchi = async (
-  tamagotchi_uuid: string,
+  tamagotchi_uuid: UUID,
   image_path: string
 ) => {
   await poolClientQuery(

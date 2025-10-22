@@ -28,9 +28,14 @@ export const createTamagotchiForUser = async (
   );
 }
 
-export const editTamagotchiForUser = async (
-  user_uuid: string,
+export const updateTamagotchi = async (
+  tamagotchi_uuid: string,
   image_path: string
 ) => {
-  
+  await poolClientQuery(
+    `UPDATE tamagotchis SET 
+      image_path = '${image_path}'
+    WHERE 
+      tamagotchi_uuid = '${tamagotchi_uuid}';`
+  );
 }

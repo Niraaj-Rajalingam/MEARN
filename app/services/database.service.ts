@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 
-export const pool = new Pool({
+const pool = new Pool({
   user: 'postgres',
   password: 'mearn-app-db',
   host: 'localhost',
@@ -11,25 +11,27 @@ export const pool = new Pool({
   connectionTimeoutMillis: 2000, // connection timeout
 });
 
-interface IPoolClientQueryParams {
-  queryString: string;
-  queryStringParams: (string | number | boolean)[]
-}
-
-/** Use this instead of pool.query() if you need to use transactions. */
-export const poolClientQuery = async ({
-  queryString,
-  queryStringParams
-}: IPoolClientQueryParams) => {
-  const client = await pool.connect();
+export const poolQuery = async (
+  queryString: string,
+) => {
   try {
-    const result = await client.query(queryString, queryStringParams);
+    const result = await pool.query(queryString);
     return result.rows;
   } catch (error) {
-    console.log(`An error occurred when executing db query: 
-      ${queryString}
-      with params:
-      ${queryStringParams}`);
+    console.log(`An error occurred when executing db query: \n${queryString}`);
+  }
+}
+
+/** Use this instead of poolQuery if you need to use transactions. */
+export const poolClientQuery = async (
+  queryString: string,
+) => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(queryString);
+    return result.rows;
+  } catch (error) {
+    console.log(`An error occurred when executing db query: \n${queryString}`);
   } finally {
     client.release();
   }

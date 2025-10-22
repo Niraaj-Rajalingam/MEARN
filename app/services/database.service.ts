@@ -13,7 +13,7 @@ const pool = new Pool({
 
 export const poolQuery = async (
   queryString: string,
-) => {
+): Promise<any[] | undefined> => {
   try {
     const result = await pool.query(queryString);
     return result.rows;
@@ -26,7 +26,7 @@ export const poolQuery = async (
 /** Use this instead of poolQuery if you need to use transactions. */
 export const poolClientQuery = async (
   queryString: string,
-) => {
+): Promise<any[] | undefined> => {
   const client = await pool.connect();
   try {
     const result = await client.query(queryString);

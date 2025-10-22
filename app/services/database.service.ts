@@ -16,6 +16,7 @@ interface IPoolClientQueryParams {
   queryStringParams: (string | number | boolean)[]
 }
 
+/** Use this instead of pool.query() if you need to use transactions. */
 export const poolClientQuery = async ({
   queryString,
   queryStringParams

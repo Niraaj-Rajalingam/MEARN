@@ -1,3 +1,7 @@
+# MEARN
+
+A todo app that "gamifies" the achievement of goals by nurturing a Tamagotchi pet! 
+
 ## Project management
 
 This project utilizes [GitHub Projects](https://github.com/users/Niraaj-Rajalingam/projects/1) and [GitHub Issues](https://github.com/Niraaj-Rajalingam/MEARN/issues) for Project Management.
@@ -15,7 +19,7 @@ This project utilizes [GitHub Projects](https://github.com/users/Niraaj-Rajaling
 
 Note that this development environment uses a postgres database that works out of the box:
 
-- Data is persisted across sessions in the `pg-db-data` docker volume. If you want to clear your database, simply delete the docker volume with `docker volume rm pg-db-data`.
+- Data is persisted across sessions in the `mearn-database-data` docker volume. If you want to clear your database (e.g., if you want to reseed your database with changes to the `init_schema.sql` file), simply delete the `mearn-database` docker container and `mearn-database-data` docker volume. Then rerun the `docker compose up --watch` command and you should see the changes. Of course, you can also manually run the SQL script using `psql` in the container shell.
 - The postgres database username is `postgres` and the password is `mearn-app-db`.
 - You should be able to access the database using any GUI RDBMS software at `localhost:5432` when the app is running.
 

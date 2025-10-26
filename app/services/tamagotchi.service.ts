@@ -1,6 +1,6 @@
 import { UUID } from "crypto";
 import { Tamagotchi } from "../types/tamagotchi.type";
-import { poolClientQuery, poolQuery } from "./database.service";
+import { poolQuery } from "./database.service";
 
 export const getTamagotchisForUser = async (
   user_uuid: UUID
@@ -23,7 +23,7 @@ export const createTamagotchiForUser = async (
   image_path: string
 ) => {
   try {
-    await poolClientQuery(
+    await poolQuery(
       `INSERT INTO tamagotchis (
         user_uuid, 
         image_path
@@ -44,7 +44,7 @@ export const updateTamagotchi = async (
   image_path: string
 ) => {
   try {
-    await poolClientQuery(
+    await poolQuery(
       `UPDATE tamagotchis SET 
         image_path = '${image_path}'
       WHERE 

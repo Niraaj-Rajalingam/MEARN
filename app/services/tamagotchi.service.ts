@@ -21,7 +21,7 @@ export const getTamagotchisForUser = async (
 export const createTamagotchiForUser = async (
   user_uuid: UUID,
   image_path: string
-) => {
+): Promise<boolean> => {
   try {
     await poolQuery(
       `INSERT INTO tamagotchis (
@@ -36,13 +36,17 @@ export const createTamagotchiForUser = async (
   } catch (error) {
     console.log(`An error occurred when creating a tamagotchi for user ${user_uuid} with image_path ${image_path}`);
     console.log(error);
+    
+    return false;
   }
+
+  return true;
 }
 
 export const updateTamagotchi = async (
   tamagotchi_uuid: UUID,
   image_path: string
-) => {
+): Promise<boolean> => {
   try {
     await poolQuery(
       `UPDATE tamagotchis SET 
@@ -53,5 +57,9 @@ export const updateTamagotchi = async (
   } catch (error) {
     console.log(`An error occurred when updating tamagotchi with id ${tamagotchi_uuid} and new image_path ${image_path}`);
     console.log(error);
+
+    return false;
   }
+
+  return true;
 }

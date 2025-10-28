@@ -61,3 +61,21 @@ export const updateTamagotchi = async (
     console.log(error);
   }
 }
+
+export const deleteTamagotchi = async (
+  tamagotchi_uuid: UUID
+): Promise<Tamagotchi[] | undefined> => {
+  try {
+    const result: Tamagotchi[] | undefined = await poolQuery(
+      `DELETE FROM tamagotchis 
+      WHERE
+        tamagotchi_uuid = '${tamagotchi_uuid}'
+      RETURNING *;`
+    );
+
+    return result;
+  } catch (error) {
+    console.log(`An error occurred when deleting tamagotchi with id ${tamagotchi_uuid}`);
+    console.log(error);
+  }
+}

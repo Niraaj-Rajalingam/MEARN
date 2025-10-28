@@ -21,9 +21,9 @@ export const getTamagotchisForUser = async (
 export const createTamagotchiForUser = async (
   user_uuid: UUID,
   image_path: string
-): Promise<boolean> => {
+): Promise<Tamagotchi[] | undefined> => {
   try {
-    await poolQuery(
+    const result: Tamagotchi[] | undefined = await poolQuery(
       `INSERT INTO tamagotchis (
         user_uuid, 
         image_path
@@ -31,35 +31,33 @@ export const createTamagotchiForUser = async (
       VALUES (
         '${user_uuid}',
         '${image_path}'
-      );`
+      )
+      RETURNING *;`
     );
+
+    return result;
   } catch (error) {
     console.log(`An error occurred when creating a tamagotchi for user ${user_uuid} with image_path ${image_path}`);
     console.log(error);
-    
-    return false;
   }
-
-  return true;
 }
 
 export const updateTamagotchi = async (
   tamagotchi_uuid: UUID,
   image_path: string
-): Promise<boolean> => {
+): Promise<Tamagotchi[] | undefined> => {
   try {
-    await poolQuery(
+    const result: Tamagotchi[] | undefined = await poolQuery(
       `UPDATE tamagotchis SET 
         image_path = '${image_path}'
       WHERE 
-        tamagotchi_uuid = '${tamagotchi_uuid}';`
+        tamagotchi_uuid = '${tamagotchi_uuid}'
+      RETURNING *;`
     );
+
+    return result;
   } catch (error) {
     console.log(`An error occurred when updating tamagotchi with id ${tamagotchi_uuid} and new image_path ${image_path}`);
     console.log(error);
-
-    return false;
   }
-
-  return true;
 }

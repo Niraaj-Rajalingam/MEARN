@@ -1,9 +1,9 @@
 import { Pool } from 'pg';
 
-const pool = new Pool({
+export const pool = new Pool({
   user: 'postgres',
   password: 'mearn-app-db',
-  host: 'mearn-database', // needs to be the same as the docker container name
+  host: process.env.NODE_ENV === 'test' ? 'localhost' : 'mearn-database',
   port: 5432,
   database: 'postgres',
   max: 20, // max number of connections

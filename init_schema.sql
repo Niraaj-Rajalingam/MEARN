@@ -44,7 +44,7 @@ CREATE TABLE todos (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     due_date TIMESTAMP WITH TIME ZONE,
     completed_at TIMESTAMP WITH TIME ZONE,
-    priority INTEGER DEFAULT 1,  -- 1: Low, 2: Medium, 3: High
+    priority INTEGER DEFAULT 1,  -- 1: Low, 2: Medium, 3: High etc.
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed', 'cancelled'))
 );
 

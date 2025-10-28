@@ -1,0 +1,71 @@
+import { UUID } from "crypto";
+import { Friends } from "../types/friends.type";
+import { poolQuery } from "./database.service";
+
+export const getFriendsForUser = async (
+  user_uuid: UUID
+): Promise<Friends[] | undefined> => {
+  try {
+    const result: Friends[] | undefined = await poolQuery(
+      `SELECT * FROM friends
+      WHERE first_user_uuid = '${user_uuid}'
+      OR second_user_uuid = '${user_uuid}';`
+    );
+
+    return result;
+  } catch (error) {
+    console.log(`An error occurred when getting friends for user ${user_uuid}`);
+    console.log(error);
+  }
+}
+
+export const createFriendForUser = async (
+  user_uuid: UUID,
+  friend_user_uuid: UUID
+): Promise<boolean> => {
+  try {
+    await poolQuery(
+      `INSERT INTO friends (
+        first_user_uuid,
+        second_user_uuid
+      )
+      VALUES (
+        '${user_uuid}',
+        '${friend_user_uuid}'
+      );`
+    );
+  } catch (error) {
+    console.log(`An error occurred when creating a friend relationship for user ${user_uuid} with their friend ${friend_user_uuid}`);
+    console.log(error);
+
+    return false;
+  }
+
+  return true;
+}
+
+export const deleteFriendForUser = async (
+  user_uuid: UUID,
+  friend_user_uuid: UUID
+): Promise<boolean> => {
+  try {
+    await poolQuery(
+      `DELETE FROM friends
+      WHERE (
+        first_user_uuid,
+        second_user_uuid
+      )
+      IN (
+        ('${user_uuid}', '${friend_user_uuid}'),
+        ('${friend_user_uuid}', '${user_uuid}' )
+      );`
+    );
+  } catch (error) {
+    console.log(`An error occurred when deleting a friend relationship for user ${user_uuid} with their friend ${friend_user_uuid}`);
+    console.log(error);
+
+    return false;
+  }
+
+  return true;
+}

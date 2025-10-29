@@ -37,7 +37,9 @@ describe('Task Service', () => {
     expect(newTask?.status).toBe('pending');
     expect(newTask?.priority).toBe(2);
 
-    createdTaskId = newTask?.todo_uuid;
+    if (newTask) {
+      createdTaskId = newTask.todo_uuid;
+    }
   });
 
   it('should get tasks for user', async () => {

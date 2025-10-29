@@ -1,21 +1,20 @@
 import { UUID } from "crypto";
-import { Friends } from "../types/friends.type";
+import { FriendRequest } from "../types/friends.type";
 import { poolQuery } from "./database.service";
 
 export const getFriendsForUser = async (
   user_uuid: UUID
-): Promise<Friends[] | undefined> => {
+): Promise<FriendRequest[] | undefined> => {
   try {
-    const result: Friends[] | undefined = await poolQuery(
-      `SELECT * FROM friends
-      WHERE first_user_uuid = $1
-      OR second_user_uuid = $2;`,
+    const result: FriendRequest[] | undefined = await poolQuery(
+      `SELECT * FROM friend_requests
+      WHERE (requester_uuid = $1 OR recipient_uuid = $2)
+      AND status = 'accepted';`,
       [
         user_uuid,
         user_uuid
       ]
     );
-
     return result;
   } catch (error) {
     console.log(`An error occurred when getting friends for user ${user_uuid}`);
@@ -23,15 +22,33 @@ export const getFriendsForUser = async (
   }
 }
 
-export const createFriendForUser = async (
-  user_uuid: UUID,
-  friend_user_uuid: UUID
-): Promise<Friends[] | undefined> => {
+export const getPendingRequestsForUser = async (
+  user_uuid: UUID
+): Promise<FriendRequest[] | undefined> => {
   try {
-    const result: Friends[] | undefined = await poolQuery(
-      `INSERT INTO friends (
-        first_user_uuid,
-        second_user_uuid
+    const result: FriendRequest[] | undefined = await poolQuery(
+      `SELECT * FROM friend_requests
+      WHERE recipient_uuid = $1
+      AND status = 'pending';`,
+      [ user_uuid ]
+    );
+    return result;
+  } catch (error) {
+    console.log(`An error occurred when getting pending requests for user ${user_uuid}`);
+    console.log(error);
+  }
+}
+
+export const sendFriendRequest = async (
+  requester_uuid: UUID,
+  recipient_uuid: UUID
+): Promise<FriendRequest[] | undefined> => {
+  try {
+    // CHANGED: Inserts into 'friend_requests'. Status defaults to 'pending'.
+    const result: FriendRequest[] | undefined = await poolQuery(
+      `INSERT INTO friend_requests (
+        requester_uuid,
+        recipient_uuid
       )
       VALUES (
         $1,
@@ -39,32 +56,53 @@ export const createFriendForUser = async (
       )
       RETURNING *;`,
       [
-        user_uuid,
-        friend_user_uuid
+        requester_uuid,
+        recipient_uuid
+      ]
+    );
+
+    return result;
+  } catch (error)
+ {
+    console.log(`An error occurred when user ${requester_uuid} sent a friend request to ${recipient_uuid}`);
+    console.log(error);
+  }
+}
+
+export const updateRequestStatus = async (
+  request_uuid: UUID,
+  status: 'accepted' | 'declined' | 'blocked'
+): Promise<FriendRequest[] | undefined> => {
+  try {
+    const result: FriendRequest[] | undefined = await poolQuery(
+      `UPDATE friend_requests
+      SET status = $1
+      WHERE request_uuid = $2
+      RETURNING *;`,
+      [
+        status,
+        request_uuid
       ]
     );
 
     return result;
   } catch (error) {
-    console.log(`An error occurred when creating a friend relationship for user ${user_uuid} with their friend ${friend_user_uuid}`);
+    console.log(`An error occurred when updating request ${request_uuid}`);
     console.log(error);
   }
 }
 
-export const deleteFriendForUser = async (
+export const removeFriend = async (
   user_uuid: UUID,
   friend_user_uuid: UUID
-): Promise<Friends[] | undefined> => {
+): Promise<FriendRequest[] | undefined> => {
   try {
-    const result: Friends[] | undefined = await poolQuery(
-      `DELETE FROM friends
+    const result: FriendRequest[] | undefined = await poolQuery(
+      `DELETE FROM friend_requests
       WHERE (
-        first_user_uuid,
-        second_user_uuid
-      )
-      IN (
-        ($1, $2),
-        ($2, $1)
+        requester_uuid = $1 AND recipient_uuid = $2
+      ) OR (
+        requester_uuid = $2 AND recipient_uuid = $1
       )
       RETURNING *;`,
       [
@@ -75,7 +113,7 @@ export const deleteFriendForUser = async (
 
     return result;
   } catch (error) {
-    console.log(`An error occurred when deleting a friend relationship for user ${user_uuid} with their friend ${friend_user_uuid}`);
+    console.log(`An error occurred when deleting friend relationship between ${user_uuid} and ${friend_user_uuid}`);
     console.log(error);
   }
 }

@@ -8,8 +8,12 @@ export const getFriendsForUser = async (
   try {
     const result: Friends[] | undefined = await poolQuery(
       `SELECT * FROM friends
-      WHERE first_user_uuid = '${user_uuid}'
-      OR second_user_uuid = '${user_uuid}';`
+      WHERE first_user_uuid = $1
+      OR second_user_uuid = $2;`,
+      [
+        user_uuid,
+        user_uuid
+      ]
     );
 
     return result;
@@ -30,10 +34,14 @@ export const createFriendForUser = async (
         second_user_uuid
       )
       VALUES (
-        '${user_uuid}',
-        '${friend_user_uuid}'
+        $1,
+        $2
       )
-      RETURNING *;`
+      RETURNING *;`,
+      [
+        user_uuid,
+        friend_user_uuid
+      ]
     );
 
     return result;
@@ -55,10 +63,14 @@ export const deleteFriendForUser = async (
         second_user_uuid
       )
       IN (
-        ('${user_uuid}', '${friend_user_uuid}'),
-        ('${friend_user_uuid}', '${user_uuid}' )
+        ($1, $2),
+        ($2, $1)
       )
-      RETURNING *;`
+      RETURNING *;`,
+      [
+        user_uuid,
+        friend_user_uuid
+      ]
     );
 
     return result;

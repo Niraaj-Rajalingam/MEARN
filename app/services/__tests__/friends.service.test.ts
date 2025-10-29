@@ -13,13 +13,25 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  const users = await poolQuery(
+  const firstUser = await poolQuery(
     `SELECT * FROM users
-    WHERE first_name = 'Ridvik'
-    OR first_name = 'Niraaj';`
+    WHERE first_name = 'Ridvik';`
   );
-  firstTestUserUuid = users?.[0].user_uuid;
-  secondTestUserUuid = users?.[1].user_uuid;
+  firstTestUserUuid = firstUser?.[0].user_uuid;
+
+  const secondUser = await poolQuery(
+    `INSERT INTO users (
+      first_name,
+      last_name
+    ) 
+    VALUES (
+      'test',
+      'user'
+    )
+    RETURNING *;`
+  );
+
+  secondTestUserUuid = secondUser?.[0].user_uuid;
 
   await poolQuery(
     `INSERT INTO friends (

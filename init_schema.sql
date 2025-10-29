@@ -59,3 +59,16 @@ SELECT
 FROM users u
 WHERE u.first_name = 'Niraaj'
 LIMIT 1;
+
+CREATE TABLE friends (
+    first_user_uuid UUID REFERENCES users (user_uuid),
+    second_user_uuid UUID REFERENCES users (user_uuid),
+    PRIMARY KEY (first_user_uuid, second_user_uuid)
+);
+
+-- Insert some sample friend relations
+INSERT INTO friends (first_user_uuid, second_user_uuid)
+SELECT u.user_uuid, v.user_uuid
+FROM users u
+JOIN users v
+ON u.user_uuid < v.user_uuid;

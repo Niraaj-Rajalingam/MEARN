@@ -39,9 +39,13 @@ beforeEach(async () => {
       second_user_uuid
     )
     VALUES (
-      '${firstTestUserUuid}',
-      '${secondTestUserUuid}'
-    );`
+      $1,
+      $2
+    );`,
+    [
+      firstTestUserUuid,
+      secondTestUserUuid
+    ]
   );
 });
 
@@ -53,9 +57,13 @@ afterEach(async () => {
       second_user_uuid
     )
     IN (
-      ('${firstTestUserUuid}', '${secondTestUserUuid}'),
-      ('${secondTestUserUuid}', '${firstTestUserUuid}' )
-    );`
+      ($1, $2),
+      ($2, $1)
+    );`,
+    [
+      firstTestUserUuid,
+      secondTestUserUuid
+    ]
   );
 })
 

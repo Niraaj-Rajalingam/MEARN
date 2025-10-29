@@ -1,6 +1,6 @@
 -- This SQL script initializes the database for local development
 -- If you modify this script, run npm run docker-clean. 
--- Then rerun docker compose up --watch to see changes
+-- Then rerun npm run docker-dev or npm run docker-test to see changes
 
 CREATE EXTENSION "uuid-ossp";
 

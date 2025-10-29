@@ -144,3 +144,68 @@ export const completeTask = async (todo_uuid: UUID): Promise<Task | undefined> =
     throw error;
   }
 }
+
+export const searchTasksForUser = async (
+  user_uuid: UUID,
+  options?: {
+    keyword?: string;
+    dueFrom?: Date;
+    dueTo?: Date;
+    priorities?: number[];
+    statuses?: Array<'pending'|'in_progress'|'completed'|'cancelled'>;
+    limit?: number;
+    offset?: number;
+  }
+): Promise<Task[] | undefined> => {
+  try {
+    const { keyword, dueFrom, dueTo, priorities, statuses, limit = 50, offset = 0 } = options || {};
+
+    let sql = `SELECT * FROM todos
+      WHERE user_uuid = '${user_uuid}'
+    `;
+
+    if (keyword) {
+      sql += ` AND (lower(title) % lower('${keyword}') OR lower(description) % lower('${keyword}'))`;
+    }
+
+    // Add date range filters
+    if (dueFrom) {
+      sql += ` AND due_date >= '${dueFrom.toISOString()}'`;
+    }
+    if (dueTo) {
+      sql += ` AND due_date <= '${dueTo.toISOString()}'`;
+    }
+
+    if (priorities && priorities.length > 0) {
+      const priorityList = priorities.join(','); // e.g., 1,2,3
+      sql += ` AND priority IN (${priorityList})`;
+    }
+
+    if (statuses && statuses.length > 0) {
+      const statusList = statuses.map(s => `'${s}'`).join(','); 
+      sql += ` AND status IN (${statusList})`;
+    }
+
+    sql += `
+      ORDER BY 
+        CASE 
+          WHEN status = 'in_progress' THEN 1
+          WHEN status = 'pending' THEN 2
+          WHEN status = 'completed' THEN 3
+          WHEN status = 'cancelled' THEN 4
+        END,
+        priority DESC,
+        due_date ASC NULLS LAST,
+        created_at DESC
+      LIMIT ${limit} OFFSET ${offset};
+    `;
+    
+    const result: Task[] | undefined = await poolQuery(sql);
+    return result;
+    
+  } catch (error) {
+    console.log(`An error occurred when searching tasks for user ${user_uuid}`);
+    console.log(error);
+    throw error;
+  }
+}

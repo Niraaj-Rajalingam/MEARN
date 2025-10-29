@@ -19,9 +19,10 @@ export const pool = new Pool({
 
 export const poolQuery = async (
   queryString: string,
+  params?: any[]
 ): Promise<any[] | undefined> => {
   try {
-    const result = await pool.query(queryString);
+    const result = await pool.query(queryString, params);
     return result.rows;
   } catch (error) {
     console.log(`An error occurred when executing db query: \n${queryString}`);

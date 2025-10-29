@@ -3,6 +3,7 @@
 -- Then rerun npm run docker-dev or npm run docker-test to see changes
 
 CREATE EXTENSION "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 CREATE TABLE users (
     user_uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -35,6 +36,8 @@ JOIN (
         ('Eduardo Jose', '/images/tamagotchi_3.jpg')
 ) AS t (first_name, image_path)
 ON u.first_name = t.first_name;
+
+
 
 CREATE TABLE todos (
     todo_uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

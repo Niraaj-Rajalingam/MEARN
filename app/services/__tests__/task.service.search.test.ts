@@ -5,7 +5,7 @@ import {
   deleteTask,
   updateTask 
 } from "../task.service";
-import { poolQuery } from "../database.service";
+import { pool, poolQuery } from "../database.service";
 import { Task } from "../../types/task.type";
 
 describe('Task Search', () => {
@@ -33,6 +33,7 @@ describe('Task Search', () => {
 
   afterAll(async () => {
     await cleanup();
+    await pool.end();
   });
 
   beforeEach(async () => {

@@ -8,7 +8,8 @@
     "build": "next build --turbopack",
     "start": "next start",
     "test": "cross-env NODE_ENV=test jest",
-    "docker-test": "cross-env NODE_ENV=test docker compose up -d mearn-database-test && jest"
+    "docker-test": "cross-env NODE_ENV=test docker compose up -d mearn-database-test && jest",
+    "docker-clean": "docker compose down -v --rmi all"
   },
   "dependencies": {
     "@types/pg": "^8.15.5",

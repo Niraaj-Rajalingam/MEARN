@@ -2,9 +2,15 @@ import { Pool } from 'pg';
 
 export const pool = new Pool({
   user: 'postgres',
-  password: 'mearn-app-db',
-  host: process.env.NODE_ENV === 'test' ? 'localhost' : 'mearn-database',
-  port: 5432,
+  password: process.env.NODE_ENV === 'test'
+    ? 'mearn-app-db-test'
+    : 'mearn-app-db',
+  host: process.env.NODE_ENV === 'test' 
+    ? 'localhost' 
+    : 'mearn-database',
+  port: process.env.NODE_ENV === 'test'
+    ? 5433
+    : 5432,
   database: 'postgres',
   max: 20, // max number of connections
   idleTimeoutMillis: 30000, // max idle time

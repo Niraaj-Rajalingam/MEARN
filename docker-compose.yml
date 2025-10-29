@@ -39,7 +39,28 @@ services:
       interval: 1s
       timeout: 5s
       retries: 3
+  mearn-database-test:
+    container_name: mearn-database-test
+    build:
+      context: .
+      dockerfile: ./Dockerfile.db.dev
+    restart: always
+    ports:
+      - "5433:5432"
+    volumes:
+      - mearn-database-test-data:/var/lib/postgresql/data
+    environment:
+      - PGUSER=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mearn-app-db-test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 1s
+      timeout: 5s
+      retries: 3
 
 volumes:
   mearn-database-data:
     name: "mearn-database-data"
+  mearn-database-test-data:
+    name: "mearn-database-test-data"

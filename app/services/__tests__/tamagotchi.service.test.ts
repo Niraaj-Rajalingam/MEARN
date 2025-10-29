@@ -23,10 +23,13 @@ beforeEach(async () => {
       image_path
     )
     VALUES (
-      '${testUserUuid}',
+      $1,
       '/images/test-tamagotchi.jpg'
     )
-    RETURNING *;`
+    RETURNING *;`,
+    [
+      testUserUuid
+    ]
   );
 
   testTamagotchiUuid = testTamagotchi?.[0]?.tamagotchi_uuid;
@@ -35,7 +38,10 @@ beforeEach(async () => {
 afterEach(async () => {
   await poolQuery(
     `DELETE FROM tamagotchis
-    WHERE tamagotchi_uuid = '${testTamagotchiUuid}';`
+    WHERE tamagotchi_uuid = $1;`,
+    [
+      testTamagotchiUuid
+    ]
   );
 })
 

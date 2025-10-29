@@ -8,7 +8,10 @@ export const getTamagotchisForUser = async (
   try {
     const result: Tamagotchi[] | undefined = await poolQuery(
       `SELECT * FROM tamagotchis
-      WHERE user_uuid = '${user_uuid}';`
+      WHERE user_uuid = $1;`,
+      [
+        user_uuid
+      ]
     );
   
     return result;
@@ -29,10 +32,14 @@ export const createTamagotchiForUser = async (
         image_path
       )
       VALUES (
-        '${user_uuid}',
-        '${image_path}'
+        $1,
+        $2
       )
-      RETURNING *;`
+      RETURNING *;`,
+      [
+        user_uuid,
+        image_path
+      ]
     );
 
     return result;
@@ -49,10 +56,14 @@ export const updateTamagotchi = async (
   try {
     const result: Tamagotchi[] | undefined = await poolQuery(
       `UPDATE tamagotchis SET 
-        image_path = '${image_path}'
+        image_path = $1
       WHERE 
-        tamagotchi_uuid = '${tamagotchi_uuid}'
-      RETURNING *;`
+        tamagotchi_uuid = $2
+      RETURNING *;`,
+      [
+        image_path,
+        tamagotchi_uuid
+      ]
     );
 
     return result;
@@ -69,8 +80,11 @@ export const deleteTamagotchi = async (
     const result: Tamagotchi[] | undefined = await poolQuery(
       `DELETE FROM tamagotchis 
       WHERE
-        tamagotchi_uuid = '${tamagotchi_uuid}'
-      RETURNING *;`
+        tamagotchi_uuid = $1
+      RETURNING *;`,
+      [
+        tamagotchi_uuid
+      ]
     );
 
     return result;

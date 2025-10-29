@@ -34,11 +34,12 @@ export const poolQuery = async (
 /** Use this instead of poolQuery if you need to use transactions. */
 export const poolClientQuery = async (
   queryString: string,
+  params?: any[]
 ): Promise<any[] | undefined> => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN;');
-    const result = await client.query(queryString);
+    const result = await client.query(queryString, params);
     await client.query('COMMIT;');
 
     return result.rows;

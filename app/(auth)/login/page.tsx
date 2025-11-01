@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { loginAction } from './actions';
 
@@ -23,7 +23,7 @@ export default function LoginPage() {
         setMessage('Success! Logging in...');
         // redirect to dashboard after a short delay
         setTimeout(() => {
-          router.push('/dashboard');
+          router.push(`/dashboard/${result.user?.user_uuid}`);
         }, 1000);
       } else {
         setMessage(result.error || 'Login failed. Please try again.');
@@ -75,11 +75,10 @@ export default function LoginPage() {
           </div>
 
           {message && (
-            <div className={`p-3 rounded-md text-sm ${
-              message.includes('Success')
-                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
-            }`}>
+            <div className={`p-3 rounded-md text-sm ${message.includes('Success')
+              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+              }`}>
               {message}
             </div>
           )}

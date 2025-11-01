@@ -1,13 +1,16 @@
+//app/services/task.service.ts
 import { UUID } from "crypto";
 import { Task, CreateTaskDTO, UpdateTaskDTO } from "../types/task.type";
 import { poolQuery } from "./database.service";
 
 export const getTasksForUser = async (
-  user_uuid: UUID
+  user_uuid: UUID,
+  group_uuid?: UUID
 ): Promise<Task[] | undefined> => {
   try {
-    const result: Task[] | undefined = await poolQuery(
-      `SELECT 
+    // Base query
+    let query = `
+      SELECT 
         t.*,
         COALESCE(json_agg(ta.user_uuid) FILTER (WHERE ta.user_uuid IS NOT NULL), '[]') AS assignees
       FROM todos t
@@ -17,6 +20,17 @@ export const getTasksForUser = async (
         FROM task_assignees ta_user 
         WHERE ta_user.user_uuid = $1
       )
+    `;
+
+    // Add group filter if provided
+    const params: (UUID)[] = [user_uuid];
+    if (group_uuid) {
+      params.push(group_uuid);
+      query += ` AND t.group_uuid = $2`;
+    }
+
+    // Grouping and ordering
+    query += `
       GROUP BY t.todo_uuid
       ORDER BY 
         CASE 
@@ -28,17 +42,18 @@ export const getTasksForUser = async (
         END,
         t.priority DESC,
         t.due_date ASC NULLS LAST,
-        t.created_at DESC;`,
-      [user_uuid]
-    );
-    
+        t.created_at DESC;
+    `;
+
+    const result: Task[] | undefined = await poolQuery(query, params);
     return result;
   } catch (error) {
     console.log(`An error occurred when getting tasks for user ${user_uuid}`);
     console.log(error);
     throw error;
   }
-}
+};
+
 
 export const getTaskById = async (
   todo_uuid: UUID
@@ -54,7 +69,7 @@ export const getTaskById = async (
       GROUP BY t.todo_uuid;`,
       [todo_uuid]
     );
-    
+
     return result?.[0];
   } catch (error) {
     console.log(`An error occurred when getting task ${todo_uuid}`);
@@ -138,7 +153,7 @@ export const updateTask = async (
         return `${key} = $${index + 2}`;
       })
       .join(', ');
-    
+
     const queryParams = Object.values(otherUpdates)
       .filter(value => value !== undefined && value !== null);
 
@@ -161,7 +176,7 @@ export const updateTask = async (
         const values = assignee_uuids
           .map((_, index) => `($1, $${index + 2})`)
           .join(', ');
-        
+
         await poolQuery(
           `INSERT INTO task_assignees (task_uuid, user_uuid) VALUES ${values};`,
           [todo_uuid, ...assignee_uuids]
@@ -202,9 +217,9 @@ export const completeTask = async (todo_uuid: UUID): Promise<Task | undefined> =
       WHERE todo_uuid = $1;`,
       [todo_uuid]
     );
-    
+
     return await getTaskById(todo_uuid);
-    
+
   } catch (error) {
     console.log(`An error occurred when completing task ${todo_uuid}`);
     console.log(error);
@@ -219,14 +234,14 @@ export const searchTasksForUser = async (
     dueFrom?: Date;
     dueTo?: Date;
     priorities?: number[];
-    statuses?: Array<'draft'|'pending'|'in_progress'|'completed'|'cancelled'>;
+    statuses?: Array<'draft' | 'pending' | 'in_progress' | 'completed' | 'cancelled'>;
     limit?: number;
     offset?: number;
   }
 ): Promise<Task[] | undefined> => {
   try {
     const { keyword, dueFrom, dueTo, priorities, statuses, limit = 50, offset = 0 } = options || {};
-    
+
     let queryParams: any[] = [user_uuid];
     let paramIndex = 2;
 
@@ -285,12 +300,12 @@ export const searchTasksForUser = async (
         t.created_at DESC
       LIMIT $${paramIndex++} OFFSET $${paramIndex++};
     `;
-    
+
     queryParams.push(limit, offset);
-    
+
     const result: Task[] | undefined = await poolQuery(sql, queryParams);
     return result;
-    
+
   } catch (error) {
     console.log(`An error occurred when searching tasks for user ${user_uuid}`);
     console.log(error);

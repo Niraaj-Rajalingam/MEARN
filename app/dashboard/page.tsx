@@ -23,12 +23,6 @@ export default async function DashboardPage() {
             {/* tamagotchi component will go here */}
           </section>
 
-          {/* to-do list section */}
-          <section className="border rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">My Tasks</h2>
-            {/* to-do list component will go here */}
-          </section>
-
           {/* friends section */}
           <section className="border rounded-lg p-6">
             <div className="flex justify-between items-center mb-4">
@@ -47,6 +41,27 @@ export default async function DashboardPage() {
               View All Friends
             </a>
           </section>
+
+          {/* to-do group section */}
+          <section className="border rounded-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold mb-4">My Groups</h2>
+              <a
+                href="/groups/add"
+                className="text-sm text-primary hover:underline"
+              >
+                Create New Group
+              </a>
+            </div>
+            {/* to-do list component will go here */}
+          </section>
+
+          {/* to-do tasks section */}
+          <section className="border rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-4">My Tasks</h2>
+            {/* to-do list component will go here */}
+          </section>
+
         </div>
       </div>
     </div>

@@ -6,9 +6,7 @@ export async function GET(
   _request: Request,
   { params }: { params: { user_uuid: UUID } }
 ) {
-  const user_uuid: UUID = await new Promise<UUID>((resolve) => {
-    resolve(params.user_uuid);
-  });
+  const user_uuid: UUID = params.user_uuid;
 
   try {
     const tasks = await getTasksForUser(user_uuid);

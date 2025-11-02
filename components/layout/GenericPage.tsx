@@ -58,6 +58,7 @@ export default function GenericPage({
                 onChange={handleSearchChange}
                 className="w-full px-3 py-2 border rounded-md bg-background"
                 placeholder={searchPlaceholder}
+                aria-label={searchPlaceholder}
               />
             </div>
           )}

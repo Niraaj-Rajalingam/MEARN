@@ -23,7 +23,7 @@ export const getTasksForUser = async (
     `;
 
     // Add group filter if provided
-    const params: (UUID)[] = [user_uuid];
+    const params: UUID[] = [user_uuid];
     if (group_uuid) {
       params.push(group_uuid);
       query += ` AND t.group_uuid = $2`;

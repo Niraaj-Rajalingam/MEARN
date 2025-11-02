@@ -7,9 +7,18 @@ interface HeaderProps {
   user?: User | null;
 }
 
+import { useState } from 'react';
+
 export function Header({ user }: HeaderProps) {
+  const [error, setError] = useState<string | null>(null);
+
   const handleLogout = async () => {
-    await logoutAction();
+    try {
+      await logoutAction();
+      setError(null);
+    } catch (err) {
+      setError('Logout failed. Please try again.');
+    }
   };
 
   return (
@@ -32,6 +41,11 @@ export function Header({ user }: HeaderProps) {
             </>
           )}
         </nav>
+        {error && (
+          <div className="text-sm text-red-600 mt-2">
+            {error}
+          </div>
+        )}
       </div>
     </header>
   );

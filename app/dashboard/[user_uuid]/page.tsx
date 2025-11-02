@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import type { Task } from '@/app/types/task.type';
 
 export default function DashboardPage({ params }: { params: { user_uuid: string } }) {
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     const user_uuid = params.user_uuid;
@@ -17,8 +18,8 @@ export default function DashboardPage({ params }: { params: { user_uuid: string 
     fetchDashboard();
   }, [params]);
 
-  const handleToggleTask = (id: number) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+  const handleToggleTask = (todo_uuid: string) => {
+    setTasks(tasks.map(t => t.todo_uuid === todo_uuid ? { ...t, completed: !t.completed_at } : t));
   };
 
   return (
@@ -39,24 +40,24 @@ export default function DashboardPage({ params }: { params: { user_uuid: string 
           ) : (
             tasks.map(task => (
               <div
-                key={task.id}
-                className={`flex justify-between items-center p-4 bg-white rounded-xl shadow-sm border ${task.completed ? 'opacity-60 line-through' : ''
+                key={task.todo_uuid}
+                className={`flex justify-between items-center p-4 bg-white rounded-xl shadow-sm border ${task.completed_at ? 'opacity-60 line-through' : ''
                   }`}
               >
                 <div>
                   <h3 className="font-medium">{task.title}</h3>
                   <p className="text-sm text-gray-500">
-                    Due {task.due_date} • Priority: {task.priority}
+                    Due {task.due_date?.toDateString()} • Priority: {task.priority}
                   </p>
                 </div>
                 <button
-                  onClick={() => handleToggleTask(task.id)}
-                  className={`px-4 py-2 rounded-xl font-medium transition-all duration-150 ${task.completed
-                      ? 'bg-gray-200 hover:bg-gray-300'
-                      : 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                  onClick={() => handleToggleTask(task.todo_uuid)}
+                  className={`px-4 py-2 rounded-xl font-medium transition-all duration-150 ${task.completed_at
+                    ? 'bg-gray-200 hover:bg-gray-300'
+                    : 'bg-indigo-500 hover:bg-indigo-600 text-white'
                     }`}
                 >
-                  {task.completed ? 'Undo' : 'Complete'}
+                  {task.completed_at ? 'Undo' : 'Complete'}
                 </button>
               </div>
             ))

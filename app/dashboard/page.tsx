@@ -28,6 +28,25 @@ export default async function DashboardPage() {
             <h2 className="text-xl font-semibold mb-4">My Tasks</h2>
             {/* to-do list component will go here */}
           </section>
+
+          {/* friends section */}
+          <section className="border rounded-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">My Friends</h2>
+              <a
+                href="/friends/add"
+                className="text-sm text-primary hover:underline"
+              >
+                Add Friend
+              </a>
+            </div>
+            <a
+              href="/friends"
+              className="block text-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90"
+            >
+              View All Friends
+            </a>
+          </section>
         </div>
       </div>
     </div>

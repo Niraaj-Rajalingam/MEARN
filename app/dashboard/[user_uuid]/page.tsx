@@ -31,6 +31,38 @@ export default function DashboardPage({ params }: { params: { user_uuid: string 
         <p className="text-gray-500">Your Tamagotchi will appear here</p>
       </section>
 
+
+      {/* Friends section */}
+      <section className="border rounded-lg p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">My Friends</h2>
+          <Link
+            href={`/friends/${params.user_uuid}/add`}
+            className="text-sm text-indigo-600 hover:underline"
+          >
+            Add Friend
+          </Link>
+        </div>
+        <Link
+          href={`/friends/${params.user_uuid}`}
+          className="block text-center px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600"
+        >
+          View All Friends
+        </Link>
+      </section>
+      {/* to-do group section */}
+      <section className="border rounded-lg p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold mb-4">My Groups</h2>
+          <Link
+            href={`/groups/${params.user_uuid}/add`}
+            className="text-sm text-primary hover:underline"
+          >
+            Create New Group
+          </Link>
+        </div>
+        {/* to-do list component will go here */}
+      </section>
       {/* To-do list section */}
       <section className="border rounded-lg p-6">
         <h2 className="text-xl font-semibold mb-4">My Tasks</h2>
@@ -63,25 +95,6 @@ export default function DashboardPage({ params }: { params: { user_uuid: string 
             ))
           )}
         </div>
-      </section>
-
-      {/* Friends section */}
-      <section className="border rounded-lg p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">My Friends</h2>
-          <Link
-            href="/friends/add"
-            className="text-sm text-indigo-600 hover:underline"
-          >
-            Add Friend
-          </Link>
-        </div>
-        <Link
-          href="/friends"
-          className="block text-center px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600"
-        >
-          View All Friends
-        </Link>
       </section>
     </>
   );

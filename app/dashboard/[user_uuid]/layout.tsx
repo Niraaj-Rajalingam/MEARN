@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/session';
 import { Header } from '@/components/layout';
+import FriendsPage from '@/app/friends/[user_uuid]/page';
 
 export default async function DashboardLayout({
     children,

@@ -5,35 +5,18 @@ import GenericPage from '@/components/layout/GenericPage';
 import GenericList, { GenericListItem } from '@/components/layout/GenericList';
 import { fetchFriendsAction, removeFriendAction } from './actions';
 
-export default function FriendsPage({ params }: { params: Promise<{ user_uuid: string }> }) {
-  const [currentUserId, setCurrentUserId] = useState<string>('');
+export default function FriendsPage({ params }: { params: { user_uuid: string } }) {
   const [friends, setFriends] = useState<GenericListItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-
-    const extractParams = async () => {
-      const resolvedParams = await params;
-      if (active) {
-        setCurrentUserId(resolvedParams.user_uuid);
-      }
-    };
-
-    extractParams();
-
-    return () => {
-      active = false;
-    };
-  }, [params]);
+  const currentUserId = params.user_uuid;
 
   useEffect(() => {
     let active = true;
 
     const loadFriends = async () => {
-      if (!currentUserId) return;
       setIsLoading(true);
       setError(null);
       try {
@@ -101,7 +84,6 @@ export default function FriendsPage({ params }: { params: Promise<{ user_uuid: s
       title="My Friends"
       description="View and manage your friends"
       searchPlaceholder="Search friends..."
-      homeHref={`/dashboard/${currentUserId}`}
       onSearch={handleSearch}
       showSearch={true}
       showSubmit={false}

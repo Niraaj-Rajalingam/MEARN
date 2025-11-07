@@ -1,11 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import GenericPage from '@/components/layout/GenericPage';
-import FlashMessage from '@/app/components/FlashMessage';
 import { findUserByEmailAction, createGroupAction } from './actions';
-import { isEmail } from '@/app/utils/validation';
-import { useFlashMessage } from '@/app/utils/hooks';
 
 type AddedMember = {
   user_uuid: string;
@@ -13,32 +10,31 @@ type AddedMember = {
   label?: string;
 };
 
-export default function CreateGroupPage({ params }: { params: Promise<{ user_uuid: string }> }) {
-  const [currentUserId, setCurrentUserId] = useState<string>('');
+function isEmail(v: string) {
+  return /\S+@\S+\.\S+/.test(v);
+}
+
+export default function CreateGroupPage({ params }: { params: { user_uuid: string } }) {
   const [groupName, setGroupName] = useState('');
   const [pendingEmail, setPendingEmail] = useState('');
   const [members, setMembers] = useState<AddedMember[]>([]);
+  const [message, setMessage] = useState<string>('');
+  const [messageKind, setMessageKind] = useState<'success' | 'error' | ''>('');
   const [isLoading, setIsLoading] = useState(false);
   const [checkingUser, setCheckingUser] = useState(false);
   const [errors, setErrors] = useState<{ groupName?: string; pendingEmail?: string }>({});
-  const { message, messageKind, flash, resetFlash } = useFlashMessage();
 
-  useEffect(() => {
-    let active = true;
+  const currentUserId = params.user_uuid;
 
-    const extractParams = async () => {
-      const resolvedParams = await params;
-      if (active) {
-        setCurrentUserId(resolvedParams.user_uuid);
-      }
-    };
+  const resetFlash = () => {
+    setMessage('');
+    setMessageKind('');
+  };
 
-    extractParams();
-
-    return () => {
-      active = false;
-    };
-  }, [params]);
+  const flash = (kind: 'success' | 'error', text: string) => {
+    setMessageKind(kind);
+    setMessage(text);
+  };
 
   const validateGroupName = () => {
     if (!groupName.trim()) {
@@ -78,7 +74,10 @@ export default function CreateGroupPage({ params }: { params: Promise<{ user_uui
       if (!res.success) {
         setErrors((e) => ({
           ...e,
-          pendingEmail: res.error || 'Could not verify user. Please try again.',
+          pendingEmail:
+            res.code === 'NOT_FOUND'
+              ? 'User not found in database.'
+              : res.error || 'Could not verify user. Please try again.',
         }));
         return;
       }
@@ -135,13 +134,22 @@ export default function CreateGroupPage({ params }: { params: Promise<{ user_uui
       description="Name your new group and add members by email. You will be the group admin."
       searchPlaceholder="(unused)"
       submitLabel={isLoading ? 'Creating...' : 'Create'}
-      homeHref={`/dashboard/${currentUserId}`}
       onSearch={undefined}
       onSubmit={handleCreate}
       showSearch={false}
       showSubmit={true}
     >
-      <FlashMessage message={message} kind={messageKind} onDismiss={resetFlash} />
+      {/* Flash message */}
+      {message && (
+        <div
+          className={`p-3 rounded-md text-sm ${messageKind === 'success'
+            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+            }`}
+        >
+          {message}
+        </div>
+      )}
 
       {/* Group name */}
       <div className="space-y-1">

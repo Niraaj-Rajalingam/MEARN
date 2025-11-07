@@ -3,8 +3,14 @@
 import { sendFriendRequest } from '@/app/services/friends.service';
 import { findUserByEmail } from '@/app/services/user.service';
 import { UUID } from 'crypto';
-import { isUUID, isEmail } from '@/app/utils/validation';
-import { errorResponse, successResponse } from '@/app/utils/response';
+
+function isUUID(v: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+}
+
+function isEmail(v: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}
 
 export async function sendFriendRequestAction(args: {
   requesterUuid: string;
@@ -15,22 +21,22 @@ export async function sendFriendRequestAction(args: {
     const recipientEmail = (args.recipientEmail || '').trim().toLowerCase();
 
     if (!isUUID(requester)) {
-      return errorResponse('Invalid requester UUID.');
+      return { success: false, error: 'Invalid requester UUID.' } as const;
     }
     if (!recipientEmail) {
-      return errorResponse('Please enter a friend email address.');
+      return { success: false, error: 'Please enter a friend email address.' } as const;
     }
     if (!isEmail(recipientEmail)) {
-      return errorResponse('Enter a valid email address.');
+      return { success: false, error: 'Enter a valid email address.' } as const;
     }
     const recipientUser = await findUserByEmail(recipientEmail);
 
     if (!recipientUser) {
-      return errorResponse('No user found with that email.');
+      return { success: false, error: 'No user found with that email.' } as const;
     }
 
     if (requester === recipientUser.user_uuid) {
-      return errorResponse('You cannot send a friend request to yourself.');
+      return { success: false, error: 'You cannot send a friend request to yourself.' } as const;
     }
 
     // Service returns FriendRequest[] | undefined
@@ -41,12 +47,15 @@ export async function sendFriendRequestAction(args: {
 
     if (!result || result.length === 0) {
       // friends.service logs DB errors and returns undefined on failure
-      return errorResponse('Could not send request. It may already exist or be blocked.');
+      return {
+        success: false,
+        error: 'Could not send request. It may already exist or be blocked.',
+      } as const;
     }
 
-    return successResponse({ request: result[0] });
+    return { success: true, request: result[0] } as const;
   } catch (err) {
     console.error('sendFriendRequestAction error:', err);
-    return errorResponse('An unexpected error occurred.');
+    return { success: false, error: 'An unexpected error occurred.' } as const;
   }
 }

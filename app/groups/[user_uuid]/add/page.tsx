@@ -134,6 +134,7 @@ export default function CreateGroupPage({ params }: { params: { user_uuid: strin
       description="Name your new group and add members by email. You will be the group admin."
       searchPlaceholder="(unused)"
       submitLabel={isLoading ? 'Creating...' : 'Create'}
+      homeHref={`/dashboard/${currentUserId}`}
       onSearch={undefined}
       onSubmit={handleCreate}
       showSearch={false}

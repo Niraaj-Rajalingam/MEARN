@@ -84,6 +84,7 @@ export default function FriendsPage({ params }: { params: { user_uuid: string } 
       title="My Friends"
       description="View and manage your friends"
       searchPlaceholder="Search friends..."
+      homeHref={`/dashboard/${currentUserId}`}
       onSearch={handleSearch}
       showSearch={true}
       showSubmit={false}

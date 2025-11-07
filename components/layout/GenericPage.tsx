@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, ReactNode } from 'react';
+import Link from 'next/link';
 
 export interface GenericPageProps {
   title: string;
@@ -11,6 +12,7 @@ export interface GenericPageProps {
   onSubmit?: () => void;
   showSearch?: boolean;
   showSubmit?: boolean;
+  homeHref?: string;
   children: ReactNode;
 }
 
@@ -23,6 +25,7 @@ export default function GenericPage({
   onSubmit,
   showSearch = true,
   showSubmit = true,
+  homeHref,
   children
 }: GenericPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,7 +47,17 @@ export default function GenericPage({
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-md space-y-8 p-8 border rounded-lg bg-card">
-        <div className="text-center">
+        <div className="space-y-3 text-center">
+          {homeHref && (
+            <div className="flex justify-end">
+              <Link
+                href={homeHref}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Home
+              </Link>
+            </div>
+          )}
           <h1 className="text-3xl font-bold">{title}</h1>
           <p className="mt-2 text-muted-foreground">{description}</p>
         </div>

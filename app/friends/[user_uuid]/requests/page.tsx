@@ -11,30 +11,14 @@ type PendingRequestItem = {
   subtitle?: string;
 };
 
-export default function FriendRequestsPage({ params }: { params: Promise<{ user_uuid: string }> }) {
-  const [currentUserId, setCurrentUserId] = useState<string>('');
+export default function FriendRequestsPage({ params }: { params: { user_uuid: string } }) {
   const [requests, setRequests] = useState<PendingRequestItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [processing, setProcessing] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-
-    const extractParams = async () => {
-      const resolvedParams = await params;
-      if (active) {
-        setCurrentUserId(resolvedParams.user_uuid);
-      }
-    };
-
-    extractParams();
-
-    return () => {
-      active = false;
-    };
-  }, [params]);
+  const currentUserId = params.user_uuid;
 
   useEffect(() => {
     let active = true;

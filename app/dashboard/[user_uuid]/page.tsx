@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Task } from '@/app/types/task.type';
+import { fetchPendingRequestsAction } from '@/app/friends/[user_uuid]/requests/actions';
 
 export default function DashboardPage({ params }: { params: { user_uuid: string } }) {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
     const user_uuid = params.user_uuid;
@@ -17,6 +19,33 @@ export default function DashboardPage({ params }: { params: { user_uuid: string 
     }
     fetchDashboard();
   }, [params]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadPendingRequests = async () => {
+      try {
+        const result = await fetchPendingRequestsAction(params.user_uuid);
+        if (!active) return;
+        if (result.success) {
+          setPendingCount(result.requests.length);
+        } else {
+          setPendingCount(0);
+        }
+      } catch (error) {
+        console.error('Failed to fetch pending requests count:', error);
+        if (active) {
+          setPendingCount(0);
+        }
+      }
+    };
+
+    loadPendingRequests();
+
+    return () => {
+      active = false;
+    };
+  }, [params.user_uuid]);
 
   const handleToggleTask = (todo_uuid: string) => {
     setTasks(tasks.map(t => t.todo_uuid === todo_uuid ? { ...t, completed: !t.completed_at } : t));
@@ -36,12 +65,20 @@ export default function DashboardPage({ params }: { params: { user_uuid: string 
       <section className="border rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">My Friends</h2>
-          <Link
-            href={`/friends/${params.user_uuid}/add`}
-            className="text-sm text-indigo-600 hover:underline"
-          >
-            Add Friend
-          </Link>
+          <div className="flex items-center gap-8">
+            <Link
+              href={`/friends/${params.user_uuid}/requests`}
+              className="text-sm text-indigo-600 hover:underline"
+            >
+              View Friendship Requests ({pendingCount})
+            </Link>
+            <Link
+              href={`/friends/${params.user_uuid}/add`}
+              className="text-sm text-indigo-600 hover:underline"
+            >
+              Add Friend
+            </Link>
+          </div>
         </div>
         <Link
           href={`/friends/${params.user_uuid}`}

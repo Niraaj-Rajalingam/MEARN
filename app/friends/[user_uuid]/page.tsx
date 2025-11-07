@@ -1,41 +1,75 @@
 'use client'
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import GenericPage from '@/components/layout/GenericPage';
 import GenericList, { GenericListItem } from '@/components/layout/GenericList';
+import { fetchFriendsAction, removeFriendAction } from './actions';
 
-export default function FriendsPage() {
-  const [friends, setFriends] = useState<GenericListItem[]>([
-    {
-      id: '550e8400-e29b-41d4-a716-446655440000',
-      title: 'Niraaj Rajalingam',
-      subtitle: 'niraaj@gmail.com'
-    },
-    {
-      id: '550e8400-e29b-41d4-a716-446655440001',
-      title: 'Ridvik Pal',
-      subtitle: 'ridvik@gmail.com'
-    }
-  ]);
+export default function FriendsPage({ params }: { params: { user_uuid: string } }) {
+  const [friends, setFriends] = useState<GenericListItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const currentUserId = params.user_uuid;
+
+  useEffect(() => {
+    let active = true;
+
+    const loadFriends = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = await fetchFriendsAction(currentUserId);
+        if (!active) return;
+
+        if (!result.success) {
+          setError(result.error || 'Failed to load friends.');
+          setFriends([]);
+          return;
+        }
+
+        setFriends(result.friends);
+      } catch (err) {
+        if (!active) return;
+        console.error('Failed to fetch friends:', err);
+        setError('Failed to load friends. Please try again.');
+        setFriends([]);
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadFriends();
+
+    return () => {
+      active = false;
+    };
+  }, [currentUserId]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
   };
 
   const handleRemoveFriend = async (friendId: string) => {
+    setError(null);
     try {
-      // TODO: Replace with actual API call
-      // await removeFriend(currentUserId, friendId);
+      const result = await removeFriendAction({
+        userUuid: currentUserId,
+        friendUuid: friendId,
+      });
 
-      // Simulating API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (!result.success) {
+        setError(result.error || 'Failed to remove friend.');
+        return;
+      }
 
-      // Remove friend from local state
-      setFriends(friends.filter(friend => friend.id !== friendId));
-    } catch (error) {
-      console.error('Failed to remove friend:', error);
+      setFriends((prev) => prev.filter((friend) => friend.id !== friendId));
+    } catch (err) {
+      console.error('Failed to remove friend:', err);
+      setError('Failed to remove friend. Please try again.');
     }
   };
 
@@ -54,6 +88,11 @@ export default function FriendsPage() {
       showSearch={true}
       showSubmit={false}
     >
+      {error && (
+        <div className="mb-4 rounded-md bg-red-100 p-3 text-sm text-red-800 dark:bg-red-900 dark:text-red-100">
+          {error}
+        </div>
+      )}
       <GenericList
         items={filteredFriends}
         onAction={handleRemoveFriend}

@@ -14,11 +14,6 @@ function isEmail(v: string) {
   return /\S+@\S+\.\S+/.test(v);
 }
 
-// TODO: replace with current user id source (session)
-function getCurrentUserId(): string {
-  return 'cf955f50-7621-428c-a14b-c812f920a8b8';
-}
-
 export default function CreateGroupPage({ params }: { params: { user_uuid: string } }) {
   const [groupName, setGroupName] = useState('');
   const [pendingEmail, setPendingEmail] = useState('');
@@ -30,7 +25,6 @@ export default function CreateGroupPage({ params }: { params: { user_uuid: strin
   const [errors, setErrors] = useState<{ groupName?: string; pendingEmail?: string }>({});
 
   const currentUserId = params.user_uuid;
-  console.log('Current User UUID:', currentUserId);
 
   const resetFlash = () => {
     setMessage('');

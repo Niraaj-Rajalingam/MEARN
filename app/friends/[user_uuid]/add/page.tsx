@@ -1,20 +1,26 @@
-'use client'
+'use client';
 
 import { useState } from 'react';
 import GenericPage from '@/components/layout/GenericPage';
+import { sendFriendRequestAction } from './actions';
 
-export default function AddFriendPage() {
-  const [friendId, setFriendId] = useState('');
+export default function AddFriendPage({ params }: { params: { user_uuid: string } }) {
+  const [friendEmail, setFriendEmail] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const currentUserId = params.user_uuid;
+
   const handleSearch = (query: string) => {
-    setFriendId(query);
+    setFriendEmail(query);
   };
 
   const handleSubmit = async () => {
-    if (!friendId.trim()) {
-      setMessage('Please enter a friend ID');
+    const trimmed = friendEmail.trim();
+    console.log('Submitting friend request to email:', trimmed);
+    console.log('Submitting friend request from:', currentUserId);
+    if (!trimmed) {
+      setMessage('Please enter a friend email address');
       return;
     }
 
@@ -22,14 +28,19 @@ export default function AddFriendPage() {
     setMessage('');
 
     try {
-      // TODO: Replace with actual API call
-      // const result = await sendFriendRequest(currentUserId, friendId);
 
-      // Simulating API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await sendFriendRequestAction({
+        requesterUuid: currentUserId,
+        recipientEmail: trimmed,
+      });
 
-      setMessage('Friend request sent successfully!');
-      setFriendId('');
+      if (!result.success) {
+        setMessage(result.error || 'Failed to send friend request. Please try again.');
+        return;
+      } else {
+        setMessage('Friend request sent successfully!');
+        setFriendEmail('');
+      }
     } catch (error) {
       setMessage('Failed to send friend request. Please try again.');
     } finally {
@@ -40,8 +51,8 @@ export default function AddFriendPage() {
   return (
     <GenericPage
       title="Add Friend"
-      description="Enter a friend's user ID to send a friend request"
-      searchPlaceholder="Enter friend user ID (UUID)"
+      description="Enter a friend's email address to send a friend request"
+      searchPlaceholder="Enter friend email address"
       submitLabel={isLoading ? 'Sending...' : 'Send Friend Request'}
       onSearch={handleSearch}
       onSubmit={handleSubmit}

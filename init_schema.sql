@@ -9,7 +9,7 @@ CREATE TABLE users (
     user_uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     first_name TEXT,
     last_name TEXT,
-    user_email TEXT,
+    user_email TEXT UNIQUE,
     user_password TEXT
 );
 

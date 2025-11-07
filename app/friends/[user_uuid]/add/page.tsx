@@ -54,6 +54,7 @@ export default function AddFriendPage({ params }: { params: { user_uuid: string 
       description="Enter a friend's email address to send a friend request"
       searchPlaceholder="Enter friend email address"
       submitLabel={isLoading ? 'Sending...' : 'Send Friend Request'}
+      homeHref={`/dashboard/${currentUserId}`}
       onSearch={handleSearch}
       onSubmit={handleSubmit}
       showSearch={true}

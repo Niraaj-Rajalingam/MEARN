@@ -3,6 +3,7 @@
 import { UUID } from 'crypto';
 import { createTask } from '@/app/services/task.service';
 import { findUserByEmail } from '@/app/services/user.service';
+import { getGroupById } from '@/app/services/group.service';
 
 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const emailRegex = /\S+@\S+\.\S+/;
@@ -62,12 +63,27 @@ export async function createTaskAction(args: CreateTaskActionArgs) {
     }
 
     let assigneeUuid: UUID = creatorUuidAsUUID;
-    if (assigneeEmail) {
-      const assignee = await findUserByEmail(assigneeEmail);
-      if (!assignee) {
-        return { success: false, error: 'Assignee email was not found.' } as const;
+    if (groupUuid) {
+      const group = await getGroupById(groupUuid as unknown as UUID);
+      if (!group) {
+        return { success: false, error: 'Selected group no longer exists.' } as const;
       }
-      assigneeUuid = assignee.user_uuid as unknown as UUID;
+
+      if (assigneeEmail) {
+        const assignee = await findUserByEmail(assigneeEmail);
+        if (!assignee) {
+          return { success: false, error: 'Assignee email was not found.' } as const;
+        }
+
+        const isMember = group.members.some((member) => String(member.user_uuid) === String(assignee.user_uuid));
+        if (!isMember) {
+          return { success: false, error: 'Assignee must be a member of the selected group.' } as const;
+        }
+
+        assigneeUuid = assignee.user_uuid as unknown as UUID;
+      }
+    } else if (assigneeEmail) {
+      return { success: false, error: 'Select a group before assigning someone else.' } as const;
     }
 
     const task = await createTask({

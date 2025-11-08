@@ -1,6 +1,5 @@
 import AddTaskClient from './AddTaskClient';
 
-export default async function AddTaskPage({ params }: { params: Promise<{ user_uuid: string }> }) {
-  const { user_uuid } = await params;
-  return <AddTaskClient userUuid={user_uuid} />;
+export default function AddTaskPage({ params }: { params: { user_uuid: string } }) {
+  return <AddTaskClient userUuid={params.user_uuid} />;
 }

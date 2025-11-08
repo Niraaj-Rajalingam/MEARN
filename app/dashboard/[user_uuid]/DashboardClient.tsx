@@ -167,6 +167,14 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
             })}
           </div>
         )}
+        {selectedGroup && (
+          <Link
+            href={`/groups/${userUuid}/${selectedGroup.group_uuid}`}
+            className="mt-4 inline-flex w-full justify-center rounded-md border border-indigo-200 px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
+          >
+            View Group Members
+          </Link>
+        )}
       </section>
       {/* To-do list section */}
       <section className="border rounded-lg p-6">

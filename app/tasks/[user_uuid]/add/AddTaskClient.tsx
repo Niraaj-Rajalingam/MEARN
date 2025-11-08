@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import GenericPage from '@/components/layout/GenericPage';
 import { createTaskAction } from './actions';
@@ -33,6 +33,14 @@ export default function AddTaskClient({ userUuid }: AddTaskClientProps) {
   const [message, setMessage] = useState('');
   const [messageKind, setMessageKind] = useState<'success' | 'error' | ''>('');
   const [errors, setErrors] = useState<FormErrors>({});
+  const allowAssigneeInput = Boolean(selectedGroupUuid);
+
+  useEffect(() => {
+    if (!allowAssigneeInput && assigneeEmail) {
+      setAssigneeEmail('');
+      setErrors((prev) => ({ ...prev, assigneeEmail: undefined }));
+    }
+  }, [allowAssigneeInput, assigneeEmail]);
 
   const groupSummary = useMemo(() => {
     if (selectedGroupUuid) {
@@ -60,7 +68,7 @@ export default function AddTaskClient({ userUuid }: AddTaskClientProps) {
       nextErrors.title = 'Please enter a task title.';
     }
 
-    if (assigneeEmail.trim() && !isEmail(assigneeEmail.trim())) {
+    if (allowAssigneeInput && assigneeEmail.trim() && !isEmail(assigneeEmail.trim())) {
       nextErrors.assigneeEmail = 'Enter a valid email address.';
     }
 
@@ -83,7 +91,7 @@ export default function AddTaskClient({ userUuid }: AddTaskClientProps) {
         description,
         dueDate,
         priority,
-        assigneeEmail,
+        assigneeEmail: allowAssigneeInput ? assigneeEmail : '',
         creatorUuid: userUuid,
         groupUuid: selectedGroupUuid,
       });
@@ -129,6 +137,10 @@ export default function AddTaskClient({ userUuid }: AddTaskClientProps) {
           {message}
         </div>
       )}
+
+      <div className="rounded-md border bg-card p-3 text-sm text-muted-foreground">
+        {groupSummary}
+      </div>
 
       <div className="space-y-1">
         <label className="text-sm font-medium">Task title</label>
@@ -183,31 +195,33 @@ export default function AddTaskClient({ userUuid }: AddTaskClientProps) {
         </select>
       </div>
 
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Assignee email (optional)</label>
-        <input
-          type="email"
-          value={assigneeEmail}
-          onChange={(e) => {
-            setAssigneeEmail(e.target.value);
-            if (errors.assigneeEmail) {
-              setErrors((prev) => ({ ...prev, assigneeEmail: undefined }));
-            }
-          }}
-          className="w-full px-3 py-2 border rounded-md bg-background"
-          placeholder="teammate@example.com"
-        />
-        {errors.assigneeEmail && (
-          <p className="text-xs text-red-600">{errors.assigneeEmail}</p>
-        )}
-        {!errors.assigneeEmail && (
-          <p className="text-xs text-muted-foreground">Leave blank to assign the task to yourself.</p>
-        )}
-      </div>
-
-      <div className="rounded-md border bg-card p-3 text-sm text-muted-foreground">
-        {groupSummary}
-      </div>
+      {allowAssigneeInput ? (
+        <div className="space-y-1">
+          <label className="text-sm font-medium">Assignee email (optional)</label>
+          <input
+            type="email"
+            value={assigneeEmail}
+            onChange={(e) => {
+              setAssigneeEmail(e.target.value);
+              if (errors.assigneeEmail) {
+                setErrors((prev) => ({ ...prev, assigneeEmail: undefined }));
+              }
+            }}
+            className="w-full px-3 py-2 border rounded-md bg-background"
+            placeholder="member@example.com"
+          />
+          {errors.assigneeEmail && (
+            <p className="text-xs text-red-600">{errors.assigneeEmail}</p>
+          )}
+          {!errors.assigneeEmail && (
+            <p className="text-xs text-muted-foreground">Only members of this group can be assigned.</p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-1 rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
+          Select a group to assign tasks to other members. Without a group, the task will be assigned to you.
+        </div>
+      )}
     </GenericPage>
   );
 }

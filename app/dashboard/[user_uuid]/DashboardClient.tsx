@@ -65,10 +65,51 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
     };
   }, [userUuid]);
 
-  const handleToggleTask = (todo_uuid: string) => {
-    setTasks((prevTasks) =>
-      prevTasks.map(t => t.todo_uuid === todo_uuid ? { ...t, completed: !t.completed_at } : t)
-    );
+  const handleCompleteTask = async (todo_uuid: string) => {
+    try {
+      const res = await fetch(`/api/tasks/${todo_uuid}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'completed' }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to complete task');
+      }
+
+      const data = await res.json();
+      const completedAtValue = data.task?.completed_at ? new Date(data.task.completed_at) : new Date();
+
+      setTasks((prevTasks) =>
+        prevTasks.map(t =>
+          t.todo_uuid === todo_uuid
+            ? { ...t, status: 'completed', completed_at: completedAtValue }
+            : t
+        )
+      );
+    } catch (error) {
+      console.error('Unable to complete task:', error);
+    }
+  };
+
+  const handleDeleteTask = async (todo_uuid: string) => {
+    try {
+      const res = await fetch(`/api/tasks/${todo_uuid}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'cancelled' }),
+      });
+      if (!res.ok) {
+        throw new Error('Failed to delete task');
+      }
+      setTasks((prevTasks) => prevTasks.filter((task) => task.todo_uuid !== todo_uuid));
+    } catch (error) {
+      console.error('Unable to delete task:', error);
+    }
   };
 
   const handleSelectGroup = (group_uuid: Group['group_uuid']) => {
@@ -80,6 +121,10 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
     return groups.find(group => group.group_uuid === selectedGroupUuid) || null;
   }, [groups, selectedGroupUuid]);
 
+  const activeTasks = useMemo(() => (
+    tasks.filter(task => task.status !== 'completed' && task.status !== 'cancelled')
+  ), [tasks]);
+
   const createTaskHref = selectedGroupUuid
     ? (() => {
         const paramsObj = new URLSearchParams({ group: String(selectedGroupUuid) });
@@ -89,6 +134,16 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
         return `/tasks/${userUuid}/add?${paramsObj.toString()}`;
       })()
     : `/tasks/${userUuid}/add`;
+
+  const viewCompletedHref = selectedGroupUuid
+    ? (() => {
+        const paramsObj = new URLSearchParams({ group: String(selectedGroupUuid) });
+        if (selectedGroup?.group_name) {
+          paramsObj.set('groupName', selectedGroup.group_name);
+        }
+        return `/tasks/${userUuid}/completed?${paramsObj.toString()}`;
+      })()
+    : `/tasks/${userUuid}/completed`;
 
   return (
     <>
@@ -188,10 +243,10 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
           </Link>
         </div>
         <div className="space-y-3">
-          {tasks.length === 0 ? (
+          {activeTasks.length === 0 ? (
             <p className="text-gray-500">No tasks yet</p>
           ) : (
-            tasks.map(task => (
+            activeTasks.map(task => (
               <div
                 key={task.todo_uuid}
                 className={`flex justify-between items-center p-4 bg-white rounded-xl shadow-sm border ${task.completed_at ? 'opacity-60 line-through' : ''
@@ -203,18 +258,31 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
                     Due {task.due_date?.toDateString()} • Priority: {task.priority}
                   </p>
                 </div>
-                <button
-                  onClick={() => handleToggleTask(task.todo_uuid)}
-                  className={`px-4 py-2 rounded-xl font-medium transition-all duration-150 ${task.completed_at
-                    ? 'bg-gray-200 hover:bg-gray-300'
-                    : 'bg-indigo-500 hover:bg-indigo-600 text-white'
-                    }`}
-                >
-                  {task.completed_at ? 'Undo' : 'Complete'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleCompleteTask(task.todo_uuid)}
+                    className="px-4 py-2 rounded-xl font-medium transition-all duration-150 bg-indigo-500 hover:bg-indigo-600 text-white"
+                  >
+                    Complete
+                  </button>
+                  <button
+                    onClick={() => handleDeleteTask(task.todo_uuid)}
+                    className="px-4 py-2 rounded-xl font-medium border border-red-200 text-red-600 hover:bg-red-50"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))
           )}
+        </div>
+        <div className="mt-4 text-right">
+          <Link
+            href={viewCompletedHref}
+            className="inline-flex justify-center rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            View Completed Tasks
+          </Link>
         </div>
       </section>
     </>

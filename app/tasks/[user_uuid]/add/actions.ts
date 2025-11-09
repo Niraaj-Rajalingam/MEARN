@@ -3,9 +3,9 @@
 import { UUID } from 'crypto';
 import { createTask } from '@/app/services/task.service';
 import { findUserByEmail } from '@/app/services/user.service';
-
-const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const emailRegex = /\S+@\S+\.\S+/;
+import { getGroupById } from '@/app/services/group.service';
+import { isUUID, isEmail, parsePriority, isValidDate } from '@/app/utils/validation';
+import { errorResponse, successResponse } from '@/app/utils/response';
 
 type CreateTaskActionArgs = {
   title: string;
@@ -17,57 +17,63 @@ type CreateTaskActionArgs = {
   groupUuid?: string | null;
 };
 
-function parsePriority(value?: number | string) {
-  const num = typeof value === 'string' ? Number.parseInt(value, 10) : value;
-  if (num === 1 || num === 2 || num === 3) {
-    return num;
-  }
-  return 2;
-}
-
 export async function createTaskAction(args: CreateTaskActionArgs) {
   try {
     const title = args.title?.trim();
     if (!title) {
-      return { success: false, error: 'Please enter a task title.' } as const;
+      return errorResponse('Please enter a task title.');
     }
 
     const creatorUuid = args.creatorUuid?.trim();
-    if (!creatorUuid || !uuidRegex.test(creatorUuid)) {
-      return { success: false, error: 'Invalid creator ID.' } as const;
+    if (!creatorUuid || !isUUID(creatorUuid)) {
+      return errorResponse('Invalid creator ID.');
     }
 
     const creatorUuidAsUUID = creatorUuid as unknown as UUID;
 
     const assigneeEmail = args.assigneeEmail?.trim().toLowerCase();
-    if (assigneeEmail && !emailRegex.test(assigneeEmail)) {
-      return { success: false, error: 'Enter a valid assignee email.' } as const;
+    if (assigneeEmail && !isEmail(assigneeEmail)) {
+      return errorResponse('Enter a valid assignee email.');
     }
 
     const dueDateValue = args.dueDate?.trim();
     let dueDate: Date | undefined;
     if (dueDateValue) {
-      const parsed = new Date(dueDateValue);
-      if (Number.isNaN(parsed.getTime())) {
-        return { success: false, error: 'Invalid due date.' } as const;
+      if (!isValidDate(dueDateValue)) {
+        return errorResponse('Invalid due date.');
       }
-      dueDate = parsed;
+      dueDate = new Date(dueDateValue);
     }
 
     const priority = parsePriority(args.priority);
 
     const groupUuid = args.groupUuid && args.groupUuid !== 'null' ? args.groupUuid.trim() : null;
-    if (groupUuid && !uuidRegex.test(groupUuid)) {
-      return { success: false, error: 'Invalid group selection.' } as const;
+    if (groupUuid && !isUUID(groupUuid)) {
+      return errorResponse('Invalid group selection.');
     }
 
     let assigneeUuid: UUID = creatorUuidAsUUID;
-    if (assigneeEmail) {
-      const assignee = await findUserByEmail(assigneeEmail);
-      if (!assignee) {
-        return { success: false, error: 'Assignee email was not found.' } as const;
+    if (groupUuid) {
+      const group = await getGroupById(groupUuid as unknown as UUID);
+      if (!group) {
+        return errorResponse('Selected group no longer exists.');
       }
-      assigneeUuid = assignee.user_uuid as unknown as UUID;
+
+      if (assigneeEmail) {
+        const assignee = await findUserByEmail(assigneeEmail);
+        if (!assignee) {
+          return errorResponse('Assignee email was not found.');
+        }
+
+        const isMember = group.members.some((member) => String(member.user_uuid) === String(assignee.user_uuid));
+        if (!isMember) {
+          return errorResponse('Assignee must be a member of the selected group.');
+        }
+
+        assigneeUuid = assignee.user_uuid as unknown as UUID;
+      }
+    } else if (assigneeEmail) {
+      return errorResponse('Select a group before assigning someone else.');
     }
 
     const task = await createTask({
@@ -81,15 +87,12 @@ export async function createTaskAction(args: CreateTaskActionArgs) {
     });
 
     if (!task) {
-      return { success: false, error: 'Failed to create task.' } as const;
+      return errorResponse('Failed to create task.');
     }
 
-    return { success: true, task } as const;
+    return successResponse({ task });
   } catch (error: any) {
     console.error('createTaskAction error:', error);
-    return {
-      success: false,
-      error: error?.message || 'Failed to create task. Please try again.',
-    } as const;
+    return errorResponse(error?.message || 'Failed to create task. Please try again.');
   }
 }

@@ -3,6 +3,8 @@
 import { getFriendsForUser, removeFriend } from '@/app/services/friends.service';
 import { getUserById } from '@/app/services/user.service';
 import { UUID } from 'crypto';
+import { isUUID } from '@/app/utils/validation';
+import { errorResponse, successResponse } from '@/app/utils/response';
 
 type FriendListItem = {
   id: string;
@@ -15,16 +17,12 @@ type FetchFriendsResult =
   | { success: true; friends: FriendListItem[] }
   | { success: false; error: string };
 
-function isUUID(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
-}
-
 export async function fetchFriendsAction(userUuid: string): Promise<FetchFriendsResult> {
   try {
     const normalized = (userUuid || '').trim();
 
     if (!isUUID(normalized)) {
-      return { success: false, error: 'Invalid user identifier.' } as const;
+      return errorResponse('Invalid user identifier.');
     }
 
     const requests = await getFriendsForUser(normalized as unknown as UUID);
@@ -54,7 +52,7 @@ export async function fetchFriendsAction(userUuid: string): Promise<FetchFriends
     return { success: true, friends };
   } catch (error) {
     console.error('fetchFriendsAction error:', error);
-    return { success: false, error: 'Failed to load friends.' } as const;
+    return errorResponse('Failed to load friends.');
   }
 }
 
@@ -64,18 +62,18 @@ export async function removeFriendAction(args: { userUuid: string; friendUuid: s
     const friend = (args.friendUuid || '').trim();
 
     if (!isUUID(user) || !isUUID(friend)) {
-      return { success: false, error: 'Invalid friend identifier.' } as const;
+      return errorResponse('Invalid friend identifier.');
     }
 
     const result = await removeFriend(user as unknown as UUID, friend as unknown as UUID);
 
     if (!result || result.length === 0) {
-      return { success: false, error: 'Friend relationship not found.' } as const;
+      return errorResponse('Friend relationship not found.');
     }
 
-    return { success: true } as const;
+    return successResponse({});
   } catch (error) {
     console.error('removeFriendAction error:', error);
-    return { success: false, error: 'Failed to remove friend.' } as const;
+    return errorResponse('Failed to remove friend.');
   }
 }

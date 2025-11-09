@@ -15,7 +15,8 @@ export const getTasksForUser = async (
         COALESCE(json_agg(ta.user_uuid) FILTER (WHERE ta.user_uuid IS NOT NULL), '[]') AS assignees
       FROM todos t
       LEFT JOIN task_assignees ta ON t.todo_uuid = ta.task_uuid
-      WHERE t.todo_uuid IN (
+      WHERE t.status <> 'cancelled'
+        AND t.todo_uuid IN (
         SELECT ta_user.task_uuid 
         FROM task_assignees ta_user 
         WHERE ta_user.user_uuid = $1

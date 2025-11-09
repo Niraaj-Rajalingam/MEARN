@@ -4,9 +4,9 @@ import { updateTask } from '@/app/services/task.service';
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ todo_uuid: UUID }> }
+  { params }: { params: { todo_uuid: UUID } }
 ) {
-  const { todo_uuid } = await params;
+  const { todo_uuid } = params;
 
   try {
     let status = 'cancelled';

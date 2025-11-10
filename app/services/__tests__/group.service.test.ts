@@ -51,6 +51,8 @@ describe('group service', () => {
 
   afterEach(async () => {
     await poolQuery('DELETE FROM groups WHERE group_name LIKE $1', ['Test Group%']);
+    await poolQuery('DELETE FROM groups WHERE group_name = $1', ['Unique Group']);
+    await poolQuery('DELETE FROM groups WHERE group_name = $1', ['Shared Name']);
   });
 
   it('should create a new group and add the creator as admin', async () => {
@@ -92,6 +94,64 @@ describe('group service', () => {
     expect(memberGroups).toBeDefined();
     expect(memberGroups?.length).toBe(1);
     expect(memberGroups?.[0].group_name).toBe('Test Group');
+  });
+
+  it('should filter groups for a user by parent group', async () => {
+    const childGroup = await createGroup({
+      group_name: 'Test Group Child',
+      creator_uuid: adminUserUuid,
+      parent_group_uuid: testGroup.group_uuid
+    });
+
+    expect(childGroup).toBeDefined();
+
+    const rootGroups = await getGroupsForUser(adminUserUuid, null);
+    expect(rootGroups).toBeDefined();
+    expect(rootGroups?.every((group) => group.parent_group_uuid === null)).toBe(true);
+    expect(rootGroups?.some((group) => group.group_uuid === testGroup.group_uuid)).toBe(true);
+
+    const childGroups = await getGroupsForUser(adminUserUuid, testGroup.group_uuid);
+    expect(childGroups).toBeDefined();
+    expect(childGroups?.length).toBe(1);
+    expect(childGroups?.[0].group_uuid).toBe(childGroup?.group_uuid);
+  });
+
+  it('should not allow duplicate group names under the same parent', async () => {
+    const name = 'Unique Group';
+
+    await createGroup({
+      group_name: name,
+      creator_uuid: adminUserUuid,
+      parent_group_uuid: testGroup.group_uuid
+    });
+
+    await expect(async () => {
+      await createGroup({
+        group_name: name,
+        creator_uuid: adminUserUuid,
+        parent_group_uuid: testGroup.group_uuid
+      });
+    }).rejects.toThrow('A group with this name already exists for the selected parent.');
+  });
+
+  it('should allow different users to reuse group names under the same parent', async () => {
+    const name = 'Shared Name';
+
+    const firstGroup = await createGroup({
+      group_name: name,
+      creator_uuid: adminUserUuid,
+      parent_group_uuid: null
+    });
+
+    const secondGroup = await createGroup({
+      group_name: name,
+      creator_uuid: memberUserUuid,
+      parent_group_uuid: null
+    });
+
+    expect(firstGroup).toBeDefined();
+    expect(secondGroup).toBeDefined();
+    expect(firstGroup?.group_uuid).not.toBe(secondGroup?.group_uuid);
   });
 
   it('should get a single group by ID with all its members', async () => {
@@ -173,4 +233,3 @@ describe('group service', () => {
     expect(members?.length).toBe(0);
   });
 });
-

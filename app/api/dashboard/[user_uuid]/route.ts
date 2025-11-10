@@ -8,9 +8,10 @@ import { isUUID } from '@/app/utils/validation';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ user_uuid: UUID }> }
+  { params }: { params: Promise<{ user_uuid: string }> }
 ) {
-  const { user_uuid } = await params;
+  const { user_uuid: userUuidParam } = await params;
+  const user_uuid = userUuidParam as unknown as UUID;
   const { searchParams } = new URL(request.url);
   const groupParam = searchParams.get('group');
   const group_uuid = groupParam && isUUID(groupParam)

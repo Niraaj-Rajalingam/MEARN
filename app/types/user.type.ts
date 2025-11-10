@@ -5,6 +5,7 @@ export type User = {
   first_name: string | null;
   last_name: string | null;
   user_email: string;
+  color_scheme?: number[];  // RGB array [R, G, B]
 };
 
 export type FullUser = User & {

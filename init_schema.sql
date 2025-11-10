@@ -10,7 +10,8 @@ CREATE TABLE users (
     first_name TEXT,
     last_name TEXT,
     user_email TEXT,
-    user_password TEXT
+    user_password TEXT,
+    color_scheme INTEGER[] DEFAULT ARRAY[79, 70, 229]  -- RGB array [R, G, B] for user's color theme
 );
 
 CREATE TABLE groups (
@@ -29,7 +30,10 @@ CREATE TABLE group_members (
 CREATE TABLE tamagotchis (
     tamagotchi_uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_uuid UUID REFERENCES users (user_uuid),
-    image_path TEXT
+    image_path TEXT,
+    health INTEGER DEFAULT 100 CHECK (health >= 0 AND health <= 100),
+    experience_points INTEGER DEFAULT 0,
+    level INTEGER DEFAULT 1
 );
 
 CREATE TABLE todos (
@@ -61,12 +65,12 @@ CREATE TABLE friend_requests (
     UNIQUE(requester_uuid, recipient_uuid)
 );
 
-INSERT INTO users (first_name, last_name, user_email, user_password) VALUES
-    ('Niraaj', 'Rajalingam', 'niraaj@gmail.com', 'mypass123'),
-    ('Ridvik', 'Pal', 'ridvik@gmail.com', 'mypass123'),
-    ('Eduardo Jose', 'Sampaio Martins', 'eduardo@gmail.com', 'mypass123'),
-    ('Matthew', 'Grech', 'matthew@gmail.com', 'mypass123'),
-    ('Areeba', 'Mobeen', 'areeba@gmail.com', 'mypass123');
+INSERT INTO users (first_name, last_name, user_email, user_password, color_scheme) VALUES
+    ('Niraaj', 'Rajalingam', 'niraaj@gmail.com', 'mypass123', ARRAY[79, 70, 229]),    -- Indigo
+    ('Ridvik', 'Pal', 'ridvik@gmail.com', 'mypass123', ARRAY[236, 72, 153]),          -- Pink
+    ('Eduardo Jose', 'Sampaio Martins', 'eduardo@gmail.com', 'mypass123', ARRAY[234, 88, 12]),  -- Orange
+    ('Matthew', 'Grech', 'matthew@gmail.com', 'mypass123', ARRAY[16, 185, 129]),      -- Green
+    ('Areeba', 'Mobeen', 'areeba@gmail.com', 'mypass123', ARRAY[139, 92, 246]);
 
 INSERT INTO groups (group_name) VALUES
     ('ECE454 Project'),

@@ -3,9 +3,19 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Task } from '@/app/types/task.type';
+import type { Tamagotchi } from '@/app/types/tamagotchi.type';
+import { TamagotchiDisplay } from '@/components/features/tamagotchi/TamagotchiDisplay';
 
 export default function DashboardPage({ params }: { params: { user_uuid: string } }) {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [tamagotchi, setTamagotchi] = useState<Tamagotchi | null>(null);
+  const [tamagotchiStats, setTamagotchiStats] = useState({
+    completed_tasks: 0,
+    incomplete_tasks: 0,
+    total_tasks: 0,
+    happiness_score: 0
+  });
+  const [userColor, setUserColor] = useState<number[]>([79, 70, 229]); // Default indigo
 
   useEffect(() => {
     const user_uuid = params.user_uuid;
@@ -14,6 +24,14 @@ export default function DashboardPage({ params }: { params: { user_uuid: string 
       if (!res.ok) return;
       const data = await res.json();
       setTasks(data.tasks || []);
+      setTamagotchi(data.tamagotchi || null);
+      setTamagotchiStats(data.tamagotchiStats || {
+        completed_tasks: 0,
+        incomplete_tasks: 0,
+        total_tasks: 0,
+        happiness_score: 0
+      });
+      setUserColor(data.userColor || [79, 70, 229]);
     }
     fetchDashboard();
   }, [params]);
@@ -22,13 +40,28 @@ export default function DashboardPage({ params }: { params: { user_uuid: string 
     setTasks(tasks.map(t => t.todo_uuid === todo_uuid ? { ...t, completed: !t.completed_at } : t));
   };
 
+  // Get last completed task for tamagotchi display
+  const completedTasks = tasks.filter(t => t.completed_at);
+  const lastCompletedTask = completedTasks.length > 0
+    ? {
+        title: completedTasks[0].title,
+        completedAt: new Date(completedTasks[0].completed_at!)
+      }
+    : null;
+
   return (
     <>
       {/* Tamagotchi display section */}
       <section className="border rounded-lg p-6">
         <h2 className="text-xl font-semibold mb-4">My Tamagotchi</h2>
-        {/* Tamagotchi component will go here */}
-        <p className="text-gray-500">Your Tamagotchi will appear here</p>
+        <TamagotchiDisplay
+          points={tamagotchiStats.happiness_score}
+          level={tamagotchi?.level || 1}
+          lastCompletedTask={lastCompletedTask}
+          completedTasks={tamagotchiStats.completed_tasks}
+          incompleteTasks={tamagotchiStats.incomplete_tasks}
+          userColor={userColor}
+        />
       </section>
 
 

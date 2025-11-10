@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server';
 import type { UUID } from 'crypto';
 import { updateTask } from '@/app/services/task.service';
 
+// Cast string to UUID type
+const castToUUID = (val: string): UUID => val as UUID;
+
 export async function PATCH(
   request: Request,
-  { params }: { params: { todo_uuid: UUID } }
+  { params }: { params: Promise<{ todo_uuid: string }> }
 ) {
-  const { todo_uuid } = params;
+  const { todo_uuid } = await params;
 
   try {
     let status = 'cancelled';
@@ -32,7 +35,7 @@ export async function PATCH(
       updatePayload.completed_at = null;
     }
 
-    const updatedTask = await updateTask(todo_uuid, updatePayload);
+    const updatedTask = await updateTask(castToUUID(todo_uuid), updatePayload);
     return NextResponse.json({ success: true, task: updatedTask });
   } catch (error) {
     console.error(`Failed to update task ${todo_uuid}:`, error);

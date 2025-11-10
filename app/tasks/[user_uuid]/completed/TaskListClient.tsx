@@ -128,7 +128,7 @@ export default function TaskListClient({
           {!searchQuery && (
             <div className="mt-4 flex items-center justify-between">
               <div className="text-sm text-gray-600">
-                Page {currentPage}
+                Page <span className="font-semibold">{currentPage}</span> {hasMore && '(more available)'}
               </div>
               <div className="flex gap-2">
                 <a

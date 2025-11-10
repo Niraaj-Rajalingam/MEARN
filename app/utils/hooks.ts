@@ -1,33 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-
-/**
- * Hook for debouncing a search query or value
- * Delays execution of a callback until the value hasn't changed for the specified delay
- * @param callback The function to call after the debounce delay
- * @param delay The delay in milliseconds (default: 500ms)
- * @returns Cleanup function for the effect
- */
-export const useDebounce = (callback: () => void, delay: number = 500) => {
-  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
-
-    debounceTimer.current = setTimeout(() => {
-      callback();
-    }, delay);
-
-    return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-      }
-    };
-  }, [callback, delay]);
-};
+import { useRef, useState } from 'react';
 
 /**
  * Hook for managing flash messages with auto-clear

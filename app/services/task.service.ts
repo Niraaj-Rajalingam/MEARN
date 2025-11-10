@@ -3,58 +3,6 @@ import { UUID } from "crypto";
 import { Task, CreateTaskDTO, UpdateTaskDTO } from "../types/task.type";
 import { poolQuery } from "./database.service";
 
-export const getTasksForUser = async (
-  user_uuid: UUID,
-  group_uuid?: UUID
-): Promise<Task[] | undefined> => {
-  try {
-    // Base query
-    let query = `
-      SELECT 
-        t.*,
-        COALESCE(json_agg(ta.user_uuid) FILTER (WHERE ta.user_uuid IS NOT NULL), '[]') AS assignees
-      FROM todos t
-      LEFT JOIN task_assignees ta ON t.todo_uuid = ta.task_uuid
-      WHERE t.status <> 'cancelled'
-        AND t.todo_uuid IN (
-        SELECT ta_user.task_uuid 
-        FROM task_assignees ta_user 
-        WHERE ta_user.user_uuid = $1
-      )
-    `;
-
-    // Add group filter if provided
-    const params: UUID[] = [user_uuid];
-    if (group_uuid) {
-      params.push(group_uuid);
-      query += ` AND t.group_uuid = $2`;
-    }
-
-    // Grouping and ordering
-    query += `
-      GROUP BY t.todo_uuid
-      ORDER BY 
-        CASE 
-          WHEN t.status = 'in_progress' THEN 1
-          WHEN t.status = 'pending' THEN 2
-          WHEN t.status = 'completed' THEN 3
-          WHEN t.status = 'cancelled' THEN 4
-          WHEN t.status = 'draft' THEN 5
-        END,
-        t.priority DESC,
-        t.due_date ASC NULLS LAST,
-        t.created_at DESC;
-    `;
-
-    const result: Task[] | undefined = await poolQuery(query, params);
-    return result;
-  } catch (error) {
-    console.log(`An error occurred when getting tasks for user ${user_uuid}`);
-    console.log(error);
-    throw error;
-  }
-};
-
 
 export const getTaskById = async (
   todo_uuid: UUID
@@ -208,26 +156,6 @@ export const deleteTask = async (todo_uuid: UUID): Promise<void> => {
   }
 }
 
-export const completeTask = async (todo_uuid: UUID): Promise<Task | undefined> => {
-  try {
-    await poolQuery(
-      `UPDATE todos
-      SET 
-        status = 'completed',
-        completed_at = CURRENT_TIMESTAMP
-      WHERE todo_uuid = $1;`,
-      [todo_uuid]
-    );
-
-    return await getTaskById(todo_uuid);
-
-  } catch (error) {
-    console.log(`An error occurred when completing task ${todo_uuid}`);
-    console.log(error);
-    throw new Error("A database error occurred");
-  }
-}
-
 export const searchTasksForUser = async (
   user_uuid: UUID,
   options?: {
@@ -236,28 +164,35 @@ export const searchTasksForUser = async (
     dueTo?: Date;
     priorities?: number[];
     statuses?: Array<'draft' | 'pending' | 'in_progress' | 'completed' | 'cancelled'>;
+    group_uuid?: UUID;
     limit?: number;
     offset?: number;
   }
 ): Promise<Task[] | undefined> => {
   try {
-    const { keyword, dueFrom, dueTo, priorities, statuses, limit = 50, offset = 0 } = options || {};
+    const { keyword, dueFrom, dueTo, priorities, statuses, group_uuid, limit = 5, offset = 0 } = options || {};
 
     let queryParams: any[] = [user_uuid];
     let paramIndex = 2;
 
     let sql = `
-      SELECT 
+      SELECT
         t.*,
         COALESCE(json_agg(ta.user_uuid) FILTER (WHERE ta.user_uuid IS NOT NULL), '[]') AS assignees
       FROM todos t
       LEFT JOIN task_assignees ta ON t.todo_uuid = ta.task_uuid
       WHERE t.todo_uuid IN (
-        SELECT ta_user.task_uuid 
-        FROM task_assignees ta_user 
+        SELECT ta_user.task_uuid
+        FROM task_assignees ta_user
         WHERE ta_user.user_uuid = $1
       )
     `;
+
+    if (group_uuid) {
+      sql += ` AND t.group_uuid = $${paramIndex}`;
+      queryParams.push(group_uuid);
+      paramIndex++;
+    }
 
     if (keyword) {
       sql += ` AND (lower(t.title) % lower($${paramIndex}) OR lower(t.description) % lower($${paramIndex}))`;
@@ -288,8 +223,8 @@ export const searchTasksForUser = async (
 
     sql += `
       GROUP BY t.todo_uuid
-      ORDER BY 
-        CASE 
+      ORDER BY
+        CASE
           WHEN t.status = 'in_progress' THEN 1
           WHEN t.status = 'pending' THEN 2
           WHEN t.status = 'completed' THEN 3
@@ -309,6 +244,161 @@ export const searchTasksForUser = async (
 
   } catch (error) {
     console.log(`An error occurred when searching tasks for user ${user_uuid}`);
+    console.log(error);
+    throw new Error("A database error occurred");
+  }
+}
+
+/**
+ * Get tasks assigned to the user (created by others)
+ */
+export const getTasksAssignedToUser = async (
+  user_uuid: UUID,
+  options?: {
+    keyword?: string;
+    group_uuid?: UUID;
+    statuses?: Array<'draft' | 'pending' | 'in_progress' | 'completed' | 'cancelled'>;
+    limit?: number;
+    offset?: number;
+  }
+): Promise<Task[] | undefined> => {
+  try {
+    const { keyword, group_uuid, statuses, limit = 5, offset = 0 } = options || {};
+
+    let queryParams: any[] = [user_uuid];
+    let paramIndex = 2;
+
+    let sql = `
+      SELECT
+        t.*,
+        COALESCE(json_agg(ta.user_uuid) FILTER (WHERE ta.user_uuid IS NOT NULL), '[]') AS assignees
+      FROM todos t
+      LEFT JOIN task_assignees ta ON t.todo_uuid = ta.task_uuid
+      WHERE t.todo_uuid IN (
+        SELECT ta_user.task_uuid
+        FROM task_assignees ta_user
+        WHERE ta_user.user_uuid = $1
+      )
+      AND t.created_by != $1
+    `;
+
+    if (group_uuid) {
+      sql += ` AND t.group_uuid = $${paramIndex}`;
+      queryParams.push(group_uuid);
+      paramIndex++;
+    }
+
+    if (keyword) {
+      sql += ` AND (lower(t.title) % lower($${paramIndex}) OR lower(t.description) % lower($${paramIndex}))`;
+      queryParams.push(keyword);
+      paramIndex++;
+    }
+
+    if (statuses && statuses.length > 0) {
+      sql += ` AND t.status IN (${statuses.map(() => `$${paramIndex++}`).join(',')})`;
+      queryParams.push(...statuses);
+    }
+
+    sql += `
+      GROUP BY t.todo_uuid
+      ORDER BY
+        CASE
+          WHEN t.status = 'in_progress' THEN 1
+          WHEN t.status = 'pending' THEN 2
+          WHEN t.status = 'completed' THEN 3
+          WHEN t.status = 'cancelled' THEN 4
+          WHEN t.status = 'draft' THEN 5
+        END,
+        t.priority DESC,
+        t.due_date ASC NULLS LAST,
+        t.created_at DESC
+      LIMIT $${paramIndex++} OFFSET $${paramIndex++};
+    `;
+
+    queryParams.push(limit, offset);
+
+    const result: Task[] | undefined = await poolQuery(sql, queryParams);
+    return result;
+
+  } catch (error) {
+    console.log(`An error occurred when getting tasks assigned to user ${user_uuid}`);
+    console.log(error);
+    throw new Error("A database error occurred");
+  }
+}
+
+/**
+ * Get tasks created by the user (assigned to others)
+ */
+export const getTasksAssignedByUser = async (
+  user_uuid: UUID,
+  options?: {
+    keyword?: string;
+    group_uuid?: UUID;
+    statuses?: Array<'draft' | 'pending' | 'in_progress' | 'completed' | 'cancelled'>;
+    limit?: number;
+    offset?: number;
+  }
+): Promise<Task[] | undefined> => {
+  try {
+    const { keyword, group_uuid, statuses, limit = 5, offset = 0 } = options || {};
+
+    let queryParams: any[] = [user_uuid];
+    let paramIndex = 2;
+
+    let sql = `
+      SELECT
+        t.*,
+        COALESCE(json_agg(ta.user_uuid) FILTER (WHERE ta.user_uuid IS NOT NULL), '[]') AS assignees
+      FROM todos t
+      LEFT JOIN task_assignees ta ON t.todo_uuid = ta.task_uuid
+      WHERE t.created_by = $1
+      AND t.todo_uuid IN (
+        SELECT DISTINCT task_uuid
+        FROM task_assignees
+      )
+    `;
+
+    if (group_uuid) {
+      sql += ` AND t.group_uuid = $${paramIndex}`;
+      queryParams.push(group_uuid);
+      paramIndex++;
+    }
+
+    if (keyword) {
+      sql += ` AND (lower(t.title) % lower($${paramIndex}) OR lower(t.description) % lower($${paramIndex}))`;
+      queryParams.push(keyword);
+      paramIndex++;
+    }
+
+    if (statuses && statuses.length > 0) {
+      sql += ` AND t.status IN (${statuses.map(() => `$${paramIndex++}`).join(',')})`;
+      queryParams.push(...statuses);
+    }
+
+    sql += `
+      GROUP BY t.todo_uuid
+      ORDER BY
+        CASE
+          WHEN t.status = 'in_progress' THEN 1
+          WHEN t.status = 'pending' THEN 2
+          WHEN t.status = 'completed' THEN 3
+          WHEN t.status = 'cancelled' THEN 4
+          WHEN t.status = 'draft' THEN 5
+        END,
+        t.priority DESC,
+        t.due_date ASC NULLS LAST,
+        t.created_at DESC
+      LIMIT $${paramIndex++} OFFSET $${paramIndex++};
+    `;
+
+    queryParams.push(limit, offset);
+
+    const result: Task[] | undefined = await poolQuery(sql, queryParams);
+    return result;
+
+  } catch (error) {
+    console.log(`An error occurred when getting tasks assigned by user ${user_uuid}`);
     console.log(error);
     throw new Error("A database error occurred");
   }

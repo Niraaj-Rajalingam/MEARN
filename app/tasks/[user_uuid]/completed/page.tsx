@@ -1,52 +1,63 @@
 import GenericPage from '@/components/layout/GenericPage';
-import { fetchCompletedTasksAction } from './actions';
+import TaskListClient from './TaskListClient';
+import { fetchTasksByStatusAction } from './actions';
 
 type PageProps = {
   params: { user_uuid: string };
-  searchParams?: { group?: string; groupName?: string };
+  searchParams?: { group?: string; groupName?: string; status?: string; page?: string };
 };
 
-export default async function CompletedTasksPage({ params, searchParams }: PageProps) {
+const statusConfig = {
+  completed: {
+    title: 'Completed Tasks',
+    badgeColor: 'bg-green-100 text-green-600',
+    badgeLabel: 'Completed',
+    dateLabel: 'Completed on',
+  },
+  cancelled: {
+    title: 'Deleted Tasks',
+    badgeColor: 'bg-red-100 text-red-600',
+    badgeLabel: 'Deleted',
+    dateLabel: 'Deleted on',
+  },
+};
+
+export default async function TasksFilterPage({ params, searchParams }: PageProps) {
   const { user_uuid } = params;
   const groupUuid = searchParams?.group || null;
   const groupName = searchParams?.groupName;
+  const status = (searchParams?.status as 'completed' | 'cancelled') || 'completed';
+  const page = Number.parseInt(searchParams?.page || '1', 10);
 
-  const result = await fetchCompletedTasksAction(user_uuid, groupUuid);
+  const config = statusConfig[status];
+  const result = await fetchTasksByStatusAction(user_uuid, status, groupUuid, page);
 
   const description = groupName
-    ? `Completed tasks in ${groupName}`
-    : 'All completed tasks assigned to you.';
+    ? `${config.title.toLowerCase()} in ${groupName}`
+    : `All ${config.title.toLowerCase()} assigned to you.`;
 
   return (
     <GenericPage
-      title="Completed Tasks"
+      title={config.title}
       description={description}
       showSearch={false}
       showSubmit={false}
       homeHref={`/dashboard/${user_uuid}`}
     >
       {!result.success ? (
-        <p className="text-sm text-red-600">{result.error ?? 'Unable to load completed tasks.'}</p>
+        <p className="text-sm text-red-600">{result.error ?? `Unable to load ${status} tasks.`}</p>
       ) : result.tasks.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No completed tasks yet.</p>
+        <p className="text-sm text-muted-foreground">No {status} tasks yet.</p>
       ) : (
-        <ul className="divide-y rounded-md border">
-          {result.tasks.map((task) => (
-            <li key={String(task.todo_uuid)} className="px-4 py-3 space-y-1">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium text-gray-900">{task.title}</h3>
-                <span className="text-xs font-semibold text-green-600 bg-green-100 px-3 py-1 rounded-full">
-                  Completed
-                </span>
-              </div>
-              <p className="text-sm text-gray-500">
-                {task.completed_at
-                  ? `Completed on ${new Date(task.completed_at).toDateString()}`
-                  : 'Completed date unavailable'}
-              </p>
-            </li>
-          ))}
-        </ul>
+        <TaskListClient
+          tasks={result.tasks}
+          userUuid={user_uuid}
+          status={status}
+          statusConfig={config}
+          currentPage={result.page || 1}
+          hasMore={result.hasMore || false}
+          groupUuid={groupUuid}
+        />
       )}
     </GenericPage>
   );

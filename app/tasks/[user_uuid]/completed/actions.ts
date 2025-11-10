@@ -1,36 +1,154 @@
 'use server';
 
 import type { UUID } from 'crypto';
-import { getTasksForUser } from '@/app/services/task.service';
+import { searchTasksForUser, updateTask, deleteTask } from '@/app/services/task.service';
+import { isUUID, isStatusAllowed } from '@/app/utils/validation';
+import { errorResponse, successResponse } from '@/app/utils/response';
+import { calculatePaginationOffset } from '@/app/utils/database';
 
-const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+type TaskStatus = 'completed' | 'cancelled';
 
-export async function fetchCompletedTasksAction(userUuid: string, groupUuid?: string | null) {
+export async function fetchTasksByStatusAction(
+  userUuid: string,
+  status: TaskStatus = 'completed',
+  groupUuid?: string | null,
+  page: number = 1
+) {
   try {
-    if (!userUuid || !uuidRegex.test(userUuid)) {
-      return { success: false, error: 'Invalid user id' } as const;
+    if (!userUuid || !isUUID(userUuid)) {
+      return errorResponse('Invalid user id');
+    }
+
+    if (!isStatusAllowed(status, ['completed', 'cancelled'])) {
+      return errorResponse('Invalid task status');
     }
 
     let normalizedGroup: UUID | undefined;
     if (groupUuid) {
-      if (!uuidRegex.test(groupUuid)) {
-        return { success: false, error: 'Invalid group id' } as const;
+      if (!isUUID(groupUuid)) {
+        return errorResponse('Invalid group id');
       }
       normalizedGroup = groupUuid as unknown as UUID;
     }
 
-    const tasks = await getTasksForUser(userUuid as unknown as UUID, normalizedGroup);
-    const completedTasks = (tasks || []).filter((task) => task.status === 'completed');
+    // Validate and normalize page number
+    const pageNum = Math.max(1, Number.isNaN(page) ? 1 : page);
+    const pageSize = 50;
+    const offset = calculatePaginationOffset(pageNum, pageSize);
 
-    return {
-      success: true,
-      tasks: completedTasks,
-    } as const;
+    const tasks = await searchTasksForUser(userUuid as unknown as UUID, {
+      statuses: [status as 'completed' | 'cancelled'],
+      group_uuid: normalizedGroup,
+      limit: pageSize,
+      offset,
+    });
+
+    return successResponse({
+      tasks: tasks || [],
+      page: pageNum,
+      pageSize,
+      hasMore: (tasks?.length || 0) === pageSize,
+    });
   } catch (error) {
-    console.error('fetchCompletedTasksAction error:', error);
-    return {
-      success: false,
-      error: 'Failed to load completed tasks.',
-    } as const;
+    console.error('fetchTasksByStatusAction error:', error);
+    return errorResponse(`Failed to load ${status} tasks.`);
+  }
+}
+
+export async function fetchCompletedTasksAction(userUuid: string, groupUuid?: string | null) {
+  return fetchTasksByStatusAction(userUuid, 'completed', groupUuid);
+}
+
+export async function unresolveTaskAction(taskUuid: string) {
+  try {
+    if (!taskUuid || !isUUID(taskUuid)) {
+      return errorResponse('Invalid task ID.');
+    }
+
+    const task = await updateTask(taskUuid as unknown as UUID, {
+      status: 'pending',
+    });
+
+    if (!task) {
+      return errorResponse('Failed to unresolve task.');
+    }
+
+    return successResponse({ task });
+  } catch (error: any) {
+    console.error('unresolveTaskAction error:', error);
+    return errorResponse(error?.message || 'Failed to unresolve task.');
+  }
+}
+
+export async function deleteTaskPermanentlyAction(taskUuid: string) {
+  try {
+    if (!taskUuid || !isUUID(taskUuid)) {
+      return errorResponse('Invalid task ID.');
+    }
+
+    await deleteTask(taskUuid as unknown as UUID);
+    return successResponse({});
+  } catch (error: any) {
+    console.error('deleteTaskPermanentlyAction error:', error);
+    return errorResponse(error?.message || 'Failed to delete task.');
+  }
+}
+
+export async function recoverTaskAction(taskUuid: string) {
+  try {
+    if (!taskUuid || !isUUID(taskUuid)) {
+      return errorResponse('Invalid task ID.');
+    }
+
+    const task = await updateTask(taskUuid as unknown as UUID, {
+      status: 'pending',
+    });
+
+    if (!task) {
+      return errorResponse('Failed to recover task.');
+    }
+
+    return successResponse({ task });
+  } catch (error: any) {
+    console.error('recoverTaskAction error:', error);
+    return errorResponse(error?.message || 'Failed to recover task.');
+  }
+}
+
+export async function searchTasksByKeywordAction(
+  userUuid: string,
+  status: TaskStatus = 'completed',
+  keyword: string = '',
+  groupUuid?: string | null
+) {
+  try {
+    if (!userUuid || !isUUID(userUuid)) {
+      return errorResponse('Invalid user id');
+    }
+
+    if (!isStatusAllowed(status, ['completed', 'cancelled'])) {
+      return errorResponse('Invalid task status');
+    }
+
+    let normalizedGroup: UUID | undefined;
+    if (groupUuid) {
+      if (!isUUID(groupUuid)) {
+        return errorResponse('Invalid group id');
+      }
+      normalizedGroup = groupUuid as unknown as UUID;
+    }
+
+    const tasks = await searchTasksForUser(userUuid as unknown as UUID, {
+      statuses: [status as 'completed' | 'cancelled'],
+      group_uuid: normalizedGroup,
+      keyword: keyword || undefined,
+    });
+
+    return successResponse({
+      tasks: tasks || [],
+    });
+  } catch (error) {
+    console.error('searchTasksByKeywordAction error:', error);
+    return errorResponse(`Failed to search ${status} tasks.`);
   }
 }

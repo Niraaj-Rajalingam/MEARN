@@ -1,5 +1,6 @@
 import GenericPage from '@/components/layout/GenericPage';
 import { notFound } from 'next/navigation';
+import GroupMembersClient from './GroupMembersClient';
 import { fetchGroupWithMembersAction } from './actions';
 
 type Params = {
@@ -21,29 +22,18 @@ export default async function GroupMembersPage({ params }: Params) {
 
   return (
     <GenericPage
-      title={group.group_name}
-      description={`${members.length} member${members.length === 1 ? '' : 's'}`}
+      title="Group Members"
+      description="View and manage group members"
       showSearch={false}
       showSubmit={false}
       homeHref={`/dashboard/${user_uuid}`}
     >
-      {members.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No members in this group yet.</p>
-      ) : (
-        <ul className="divide-y rounded-md border">
-          {members.map((member) => (
-            <li key={String(member.user_uuid)} className="flex items-center justify-between px-4 py-3">
-              <div>
-                <p className="font-medium text-gray-900">{member.name}</p>
-                <p className="text-sm text-gray-500">{member.email}</p>
-              </div>
-              <span className="text-xs font-semibold uppercase tracking-wide rounded-full bg-indigo-50 text-indigo-600 px-3 py-1">
-                {member.role}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <GroupMembersClient
+        userUuid={user_uuid}
+        groupUuid={group_uuid}
+        groupName={group.group_name}
+        members={members}
+      />
     </GenericPage>
   );
 }

@@ -4,49 +4,31 @@ import { findUserByEmail } from '@/app/services/user.service';
 import { createGroup, addUserToGroup } from '@/app/services/group.service';
 import { CreateGroupDTO } from '@/app/types/group.type';
 import { UUID } from 'crypto';
-
-function isUUID(v: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
-}
-function isEmail(v: string) {
-  return /\S+@\S+\.\S+/.test(v);
-}
+import { isUUID, isEmail } from '@/app/utils/validation';
+import { errorResponse, successResponse } from '@/app/utils/response';
 
 export async function findUserByEmailAction(email: string) {
   try {
     const e = (email || '').trim().toLowerCase();
     if (!e || !isEmail(e)) {
-      return {
-        success: false,
-        code: 'INVALID_EMAIL',
-        error: 'Enter a valid email address.',
-      } as const;
+      return errorResponse('Enter a valid email address.');
     }
 
     const user = await findUserByEmail(e);
     if (!user) {
-      return {
-        success: false,
-        code: 'NOT_FOUND',
-        error: 'User not found.',
-      } as const;
+      return errorResponse('User not found.');
     }
 
-    return {
-      success: true,
+    return successResponse({
       user: {
         user_uuid: user.user_uuid,
         name: [user.first_name, user.last_name].filter(Boolean).join(' ') || null,
         email: user.user_email,
       },
-    } as const;
+    });
   } catch (err) {
     console.error('findUserByEmailAction error:', err);
-    return {
-      success: false,
-      code: 'SERVER_ERROR',
-      error: 'Internal server error.',
-    } as const;
+    return errorResponse('Internal server error.');
   }
 }
 
@@ -60,13 +42,13 @@ export async function createGroupAction(args: {
     const { groupName, creatorUuid, memberEmails, parentGroupUuid } = args;
 
     if (!groupName?.trim()) {
-      return { success: false, error: 'Please enter a group name.' } as const;
+      return errorResponse('Please enter a group name.');
     }
     if (!creatorUuid || !isUUID(creatorUuid)) {
-      return { success: false, error: 'Invalid creator UUID.' } as const;
+      return errorResponse('Invalid creator UUID.');
     }
     if (parentGroupUuid && !isUUID(parentGroupUuid)) {
-      return { success: false, error: 'Invalid parent group UUID.' } as const;
+      return errorResponse('Invalid parent group UUID.');
     }
 
     // 1) Create the group (creator becomes admin inside the service)
@@ -80,7 +62,7 @@ export async function createGroupAction(args: {
 
     const group = await createGroup(dto);
     if (!group) {
-      return { success: false, error: 'Failed to create group.' } as const;
+      return errorResponse('Failed to create group.');
     }
 
     // 2) Resolve emails -> UUIDs, skip creator and duplicates
@@ -109,16 +91,12 @@ export async function createGroupAction(args: {
       });
     }
 
-    return {
-      success: true,
+    return successResponse({
       group,
       addedCount: toAddUuids.length,
-    } as const;
+    });
   } catch (err: any) {
     console.error('createGroupAction error:', err);
-    return {
-      success: false,
-      error: err?.message || 'Failed to create group. Please try again.',
-    } as const;
+    return errorResponse(err?.message || 'Failed to create group. Please try again.');
   }
 }

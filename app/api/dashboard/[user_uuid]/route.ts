@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getTasksForUser } from '@/app/services/task.service';
+import { searchTasksForUser } from '@/app/services/task.service';
 import { getTamagotchisForUser, getTamagotchiStats } from '@/app/services/tamagotchi.service';
 import { poolQuery } from '@/app/services/database.service';
 import { getGroupsForUser } from '@/app/services/group.service';
 import { UUID } from 'crypto';
-
-const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+import { isUUID } from '@/app/utils/validation';
 
 export async function GET(
   request: Request,
@@ -14,12 +13,16 @@ export async function GET(
   const user_uuid: UUID = await params.user_uuid;
   const { searchParams } = new URL(request.url);
   const groupParam = searchParams.get('group');
-  const group_uuid = groupParam && uuidRegex.test(groupParam)
+  const group_uuid = groupParam && isUUID(groupParam)
     ? (groupParam as unknown as UUID)
     : undefined;
 
   try {
-    const tasks = await getTasksForUser(user_uuid, group_uuid);
+    // Fetch active tasks (exclude completed and cancelled)
+    const tasks = await searchTasksForUser(user_uuid, {
+      statuses: ['draft', 'pending', 'in_progress'],
+      group_uuid,
+    });
     const groups = await getGroupsForUser(user_uuid, null);
     const tamagotchis = await getTamagotchisForUser(user_uuid);
     const tamagotchiStats = await getTamagotchiStats(user_uuid);

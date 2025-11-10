@@ -3,6 +3,8 @@
 import { getPendingRequestsForUser, updateRequestStatus } from '@/app/services/friends.service';
 import { getUserById } from '@/app/services/user.service';
 import { UUID } from 'crypto';
+import { isUUID } from '@/app/utils/validation';
+import { errorResponse, successResponse } from '@/app/utils/response';
 
 type PendingRequestItem = {
   request_uuid: string;
@@ -15,16 +17,12 @@ type FetchPendingResult =
   | { success: true; requests: PendingRequestItem[] }
   | { success: false; error: string };
 
-function isUUID(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
-}
-
 export async function fetchPendingRequestsAction(userUuid: string): Promise<FetchPendingResult> {
   try {
     const normalized = (userUuid || '').trim();
 
     if (!isUUID(normalized)) {
-      return { success: false, error: 'Invalid user identifier.' };
+      return errorResponse('Invalid user identifier.');
     }
 
     const pending = await getPendingRequestsForUser(normalized as unknown as UUID);
@@ -51,7 +49,7 @@ export async function fetchPendingRequestsAction(userUuid: string): Promise<Fetc
     return { success: true, requests };
   } catch (error) {
     console.error('fetchPendingRequestsAction error:', error);
-    return { success: false, error: 'Failed to load requests.' };
+    return errorResponse('Failed to load requests.');
   }
 }
 
@@ -65,26 +63,26 @@ export async function respondToFriendRequestAction(args: {
     const recipientUuid = (args.recipientUuid || '').trim();
 
     if (!isUUID(requestUuid) || !isUUID(recipientUuid)) {
-      return { success: false, error: 'Invalid request identifier.' } as const;
+      return errorResponse('Invalid request identifier.');
     }
 
     const pending = await getPendingRequestsForUser(recipientUuid as unknown as UUID);
     const match = pending?.find((req) => String(req.request_uuid) === requestUuid);
 
     if (!match) {
-      return { success: false, error: 'Request not found or already processed.' } as const;
+      return errorResponse('Request not found or already processed.');
     }
 
     const status = args.action === 'accept' ? 'accepted' : 'declined';
     const result = await updateRequestStatus(requestUuid as unknown as UUID, status);
 
     if (!result || result.length === 0) {
-      return { success: false, error: 'Failed to update request.' } as const;
+      return errorResponse('Failed to update request.');
     }
 
-    return { success: true, status } as const;
+    return successResponse({ status });
   } catch (error) {
     console.error('respondToFriendRequestAction error:', error);
-    return { success: false, error: 'Failed to respond to request.' } as const;
+    return errorResponse('Failed to respond to request.');
   }
 }

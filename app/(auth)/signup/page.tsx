@@ -24,7 +24,7 @@ export default function SignupPage() {
         setMessage('Success! User created and logged in.');
         // redirect to dashboard after a short delay
         setTimeout(() => {
-          router.push('/dashboard');
+          router.push(`/dashboard/${result.user?.user_uuid}`);
         }, 1500);
       } else {
         setMessage(result.error || 'Sign up failed. Please try again.');
@@ -90,14 +90,15 @@ export default function SignupPage() {
             />
           </div>
 
-          {message && (
-            <div className={`p-3 rounded-md text-sm ${message.includes('Success')
+          <div className={`p-3 rounded-md text-sm transition-opacity duration-300 ${message
+            ? 'opacity-100 visible'
+            : 'opacity-0 invisible'} ${message.includes('Success')
               ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
               : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
               }`}>
-              {message}
+              {message || '\u00A0'}
             </div>
-          )}
+
 
           <button
             type="submit"

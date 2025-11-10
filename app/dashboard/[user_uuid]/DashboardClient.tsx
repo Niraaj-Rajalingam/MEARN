@@ -1,18 +1,23 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import type { Task } from '@/app/types/task.type';
 import type { Group } from '@/app/types/group.type';
+import TaskFilter, { type TaskFilterType } from '@/app/components/TaskFilter';
+import FlashMessage from '@/app/components/FlashMessage';
 import type { Tamagotchi } from '@/app/types/tamagotchi.type';
 import { TamagotchiDisplay } from '@/components/features/tamagotchi/TamagotchiDisplay';
 import { fetchPendingRequestsAction } from '@/app/friends/[user_uuid]/requests/actions';
+import { searchActiveDashboardTasksAction, getFilteredDashboardTasksAction, deleteGroupAction } from './actions';
+import { useFlashMessage } from '@/app/utils/hooks';
 
 type DashboardClientProps = {
   userUuid: string;
 };
 
 export default function DashboardClient({ userUuid }: DashboardClientProps) {
+  const { message, messageKind, flash, resetFlash } = useFlashMessage();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
@@ -25,6 +30,28 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
     happiness_score: 0
   });
   const [userColor, setUserColor] = useState<number[]>([79, 70, 229]); // Default indigo
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [taskFilter, setTaskFilter] = useState<TaskFilterType>('all');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteGroupUuid, setDeleteGroupUuid] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const activeTasks = useMemo(() => (
+    tasks.filter(task => task.status !== 'completed' && task.status !== 'cancelled')
+  ), [tasks]);
+
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredTasks(activeTasks);
+    }
+  }, [activeTasks]);
 
   useEffect(() => {
     async function fetchDashboard() {
@@ -36,7 +63,7 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
         ...task,
         due_date: task.due_date ? new Date(task.due_date) : undefined,
         completed_at: task.completed_at ? new Date(task.completed_at) : undefined,
-        created_at: task.created_at ? new Date(task.created_at) : undefined,
+        created_at: new Date(task.created_at),
       }));
       setTasks(normalizedTasks);
       setGroups(data.groups || []);
@@ -134,14 +161,161 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
     setSelectedGroupUuid((prev) => (prev === group_uuid ? null : group_uuid));
   };
 
+  const handleDeleteGroupClick = (groupUuid: string) => {
+    setDeleteGroupUuid(groupUuid);
+    setShowDeleteModal(true);
+    setDeleteConfirmInput('');
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!deleteGroupUuid) return;
+
+    const groupToDelete = groups.find((g) => String(g.group_uuid) === deleteGroupUuid);
+    if (!groupToDelete) return;
+
+    if (deleteConfirmInput.trim() !== groupToDelete.group_name.trim()) {
+      flash('error', 'Group name does not match.');
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const result = await deleteGroupAction({
+        groupUuid: deleteGroupUuid,
+        userUuid,
+        groupName: groupToDelete.group_name,
+        confirmationInput: deleteConfirmInput,
+      });
+
+      if (!result.success) {
+        flash('error', result.error || 'Failed to delete group.');
+        return;
+      }
+
+      flash('success', result.message || 'Group deleted successfully');
+      setShowDeleteModal(false);
+      setDeleteConfirmInput('');
+      setDeleteGroupUuid(null);
+
+      // Remove the deleted group from the list
+      setGroups((prev) => prev.filter((g) => String(g.group_uuid) !== deleteGroupUuid));
+
+      // Clear selection if the deleted group was selected
+      if (selectedGroupUuid === deleteGroupUuid) {
+        setSelectedGroupUuid(null);
+      }
+
+      // Refresh dashboard after a short delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (err) {
+      console.error('Error deleting group:', err);
+      flash('error', 'Failed to delete group.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Apply filter when filter type changes (without search)
+  useEffect(() => {
+    if (searchQuery.trim()) return; // Skip if searching
+
+    async function applyFilter() {
+      try {
+        const result = await getFilteredDashboardTasksAction(
+          userUuid,
+          selectedGroupUuid,
+          taskFilter
+        );
+
+        if (result.success) {
+          const normalizedTasks = (result.tasks || []).map((task: Task) => ({
+            ...task,
+            due_date: task.due_date ? new Date(task.due_date) : undefined,
+            completed_at: task.completed_at ? new Date(task.completed_at) : undefined,
+            created_at: new Date(task.created_at),
+          }));
+          setFilteredTasks(normalizedTasks);
+        }
+      } catch (error) {
+        console.error('Filter error:', error);
+      }
+    }
+
+    applyFilter();
+  }, [taskFilter, selectedGroupUuid, userUuid, searchQuery]);
+
+  // Handle search with debounce
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredTasks(activeTasks);
+      setIsSearching(false);
+      return;
+    }
+
+    // Clear previous timer
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+
+    setIsSearching(true);
+
+    // Set new timer for debounced search
+    debounceTimer.current = setTimeout(async () => {
+      try {
+        const result = await searchActiveDashboardTasksAction(
+          userUuid,
+          searchQuery,
+          selectedGroupUuid,
+          taskFilter
+        );
+
+        if (result.success) {
+          const normalizedTasks = (result.tasks || []).map((task: Task) => ({
+            ...task,
+            due_date: task.due_date ? new Date(task.due_date) : undefined,
+            completed_at: task.completed_at ? new Date(task.completed_at) : undefined,
+            created_at: new Date(task.created_at),
+          }));
+          setFilteredTasks(normalizedTasks);
+        } else {
+          console.error('Search failed:', result.error);
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500); // 500ms debounce
+
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, [searchQuery, userUuid, selectedGroupUuid, taskFilter]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
   const selectedGroup = useMemo(() => {
     if (!selectedGroupUuid) return null;
     return groups.find(group => group.group_uuid === selectedGroupUuid) || null;
   }, [groups, selectedGroupUuid]);
-
-  const activeTasks = useMemo(() => (
-    tasks.filter(task => task.status !== 'completed' && task.status !== 'cancelled')
-  ), [tasks]);
 
   const createTaskHref = selectedGroupUuid
     ? (() => {
@@ -161,15 +335,16 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
         completedAt: new Date(completedTasks[0].completed_at!)
       }
     : null;
-  const viewCompletedHref = selectedGroupUuid
-    ? (() => {
-        const paramsObj = new URLSearchParams({ group: String(selectedGroupUuid) });
-        if (selectedGroup?.group_name) {
-          paramsObj.set('groupName', selectedGroup.group_name);
-        }
-        return `/tasks/${userUuid}/completed?${paramsObj.toString()}`;
-      })()
-    : `/tasks/${userUuid}/completed`;
+  const getViewTasksHref = (status: 'completed' | 'cancelled') => {
+    if (selectedGroupUuid) {
+      const paramsObj = new URLSearchParams({ group: String(selectedGroupUuid), status });
+      if (selectedGroup?.group_name) {
+        paramsObj.set('groupName', selectedGroup.group_name);
+      }
+      return `/tasks/${userUuid}/completed?${paramsObj.toString()}`;
+    }
+    return `/tasks/${userUuid}/completed?status=${status}`;
+  };
 
   return (
     <>
@@ -224,6 +399,9 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
             Create New Group
           </Link>
         </div>
+
+        <FlashMessage message={message} kind={messageKind} onDismiss={resetFlash} />
+
         {groups.length === 0 ? (
           <p className="text-gray-500">You are not part of any groups yet.</p>
         ) : (
@@ -255,14 +433,72 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
           </div>
         )}
         {selectedGroup && (
-          <Link
-            href={`/groups/${userUuid}/${selectedGroup.group_uuid}`}
-            className="mt-4 inline-flex w-full justify-center rounded-md border border-indigo-200 px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
-          >
-            View Group Members
-          </Link>
+          <div className="mt-4 space-y-3">
+            <Link
+              href={`/groups/${userUuid}/${selectedGroup.group_uuid}`}
+              className="inline-flex w-full justify-center rounded-md border border-indigo-200 px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
+            >
+              View Group Members
+            </Link>
+            <button
+              onClick={() => handleDeleteGroupClick(String(selectedGroup.group_uuid))}
+              className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium text-sm"
+            >
+              Delete Group
+            </button>
+          </div>
         )}
       </section>
+
+      {/* Delete group confirmation modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Delete Group</h2>
+            <p className="text-gray-700 mb-4">
+              This action cannot be undone. All tasks in this group will be cancelled and the group will be permanently deleted.
+            </p>
+            {deleteGroupUuid && groups.find((g) => String(g.group_uuid) === deleteGroupUuid) && (
+              <p className="text-gray-700 font-semibold mb-4">
+                Type <span className="bg-gray-100 px-2 py-1 rounded">{groups.find((g) => String(g.group_uuid) === deleteGroupUuid)?.group_name}</span> to confirm:
+              </p>
+            )}
+            <input
+              type="text"
+              value={deleteConfirmInput}
+              onChange={(e) => setDeleteConfirmInput(e.target.value)}
+              placeholder={deleteGroupUuid && groups.find((g) => String(g.group_uuid) === deleteGroupUuid) ? `Enter "${groups.find((g) => String(g.group_uuid) === deleteGroupUuid)?.group_name}" to confirm` : 'Confirm'}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 mb-4"
+              disabled={isDeleting}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmInput('');
+                  setDeleteGroupUuid(null);
+                }}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteGroup}
+                disabled={
+                  isDeleting ||
+                  (deleteGroupUuid && groups.find((g) => String(g.group_uuid) === deleteGroupUuid)
+                    ? deleteConfirmInput.trim() !== groups.find((g) => String(g.group_uuid) === deleteGroupUuid)!.group_name.trim()
+                    : true)
+                }
+                className="flex-1 px-4 py-2 bg-red-700 text-white rounded-md hover:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete Group'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* To-do list section */}
       <section className="border rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
@@ -274,22 +510,49 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
             Create Task
           </Link>
         </div>
+
+        {activeTasks.length > 0 && (
+          <TaskFilter selectedFilter={taskFilter} onFilterChange={setTaskFilter} />
+        )}
+
+        {activeTasks.length > 0 && (
+          <div className="mb-4 relative">
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+            {isSearching && (
+              <div className="absolute right-3 top-2.5">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-500"></div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="space-y-3">
           {activeTasks.length === 0 ? (
             <p className="text-gray-500">No tasks yet</p>
+          ) : filteredTasks.length === 0 ? (
+            <p className="text-gray-500">No tasks match your search.</p>
           ) : (
-            activeTasks.map(task => (
+            filteredTasks.map(task => (
               <div
                 key={task.todo_uuid}
                 className={`flex justify-between items-center p-4 bg-white rounded-xl shadow-sm border ${task.completed_at ? 'opacity-60 line-through' : ''
                   }`}
               >
-                <div>
-                  <h3 className="font-medium">{task.title}</h3>
+                <button
+                  onClick={() => window.location.href = `/tasks/${userUuid}/edit/${task.todo_uuid}`}
+                  className="flex-1 hover:opacity-75 transition-opacity text-left"
+                >
+                  <h3 className="font-medium text-gray-900">{task.title}</h3>
                   <p className="text-sm text-gray-500">
                     Due {task.due_date?.toDateString()} • Priority: {task.priority}
                   </p>
-                </div>
+                </button>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleCompleteTask(task.todo_uuid)}
@@ -309,12 +572,32 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
           )}
         </div>
         <div className="mt-4 text-right">
-          <Link
-            href={viewCompletedHref}
-            className="inline-flex justify-center rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            View Completed Tasks
-          </Link>
+          <div className="relative inline-block" ref={dropdownRef}>
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="inline-flex justify-center rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              View Tasks ▼
+            </button>
+            {isDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white border border-gray-200 z-10">
+                <Link
+                  href={getViewTasksHref('completed')}
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-md"
+                  onClick={() => setIsDropdownOpen(false)}
+                >
+                  ✓ View Completed Tasks
+                </Link>
+                <Link
+                  href={getViewTasksHref('cancelled')}
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-md"
+                  onClick={() => setIsDropdownOpen(false)}
+                >
+                  ✗ View Deleted Tasks
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </section>
     </>

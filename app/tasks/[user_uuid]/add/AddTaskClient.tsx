@@ -3,17 +3,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import GenericPage from '@/components/layout/GenericPage';
+import FlashMessage from '@/app/components/FlashMessage';
 import { createTaskAction } from './actions';
+import { isEmail } from '@/app/utils/validation';
+import { useFlashMessage } from '@/app/utils/hooks';
 
 type FormErrors = {
   title?: string;
   assigneeEmail?: string;
   dueDate?: string;
 };
-
-function isEmail(value: string) {
-  return /\S+@\S+\.\S+/.test(value);
-}
 
 type AddTaskClientProps = {
   userUuid: string;
@@ -30,9 +29,8 @@ export default function AddTaskClient({ userUuid }: AddTaskClientProps) {
   const [priority, setPriority] = useState<'1' | '2' | '3'>('2');
   const [assigneeEmail, setAssigneeEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState('');
-  const [messageKind, setMessageKind] = useState<'success' | 'error' | ''>('');
   const [errors, setErrors] = useState<FormErrors>({});
+  const { message, messageKind, flash, resetFlash } = useFlashMessage();
   const allowAssigneeInput = Boolean(selectedGroupUuid);
 
   useEffect(() => {
@@ -51,16 +49,6 @@ export default function AddTaskClient({ userUuid }: AddTaskClientProps) {
     }
     return 'No group selected from dashboard. Task will not belong to a group.';
   }, [selectedGroupUuid, selectedGroupName]);
-
-  const flash = (kind: 'success' | 'error', text: string) => {
-    setMessageKind(kind);
-    setMessage(text);
-  };
-
-  const resetFlash = () => {
-    setMessage('');
-    setMessageKind('');
-  };
 
   const validate = () => {
     const nextErrors: FormErrors = {};
@@ -126,17 +114,7 @@ export default function AddTaskClient({ userUuid }: AddTaskClientProps) {
       submitLabel={isSubmitting ? 'Creating...' : 'Create Task'}
       onSubmit={handleCreateTask}
     >
-      {message && (
-        <div
-          className={`p-3 rounded-md text-sm ${
-            messageKind === 'success'
-              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
-          }`}
-        >
-          {message}
-        </div>
-      )}
+      <FlashMessage message={message} kind={messageKind} onDismiss={resetFlash} />
 
       <div className="rounded-md border bg-card p-3 text-sm text-muted-foreground">
         {groupSummary}

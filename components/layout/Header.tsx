@@ -23,18 +23,18 @@ export function Header({ user }: HeaderProps) {
 
   return (
     <header className="border-b">
-      <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold">MEARN Tamagotchi</h1>
+      <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <h1 className="text-lg sm:text-xl font-bold">MEARN Tamagotchi</h1>
 
-        <nav className="flex items-center gap-4">
+        <nav className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
           {user && (
             <>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs sm:text-sm text-muted-foreground break-all">
                 Welcome, {user.first_name || user.user_email}
               </span>
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 text-sm bg-destructive text-destructive-foreground rounded-md hover:opacity-90"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-destructive text-destructive-foreground rounded-md hover:opacity-90 active:opacity-75 touch-manipulation whitespace-nowrap"
               >
                 Logout
               </button>
@@ -42,7 +42,7 @@ export function Header({ user }: HeaderProps) {
           )}
         </nav>
         {error && (
-          <div className="text-sm text-red-600 mt-2">
+          <div className="text-xs sm:text-sm text-red-600 mt-2 w-full">
             {error}
           </div>
         )}

@@ -45,49 +45,43 @@ export default function GenericPage({
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="w-full max-w-md space-y-8 p-8 border rounded-lg bg-card">
-        <div className="space-y-3 text-center">
-          {homeHref && (
-            <div className="flex justify-end">
-              <Link
-                href={homeHref}
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                Home
-              </Link>
-            </div>
-          )}
-          <h1 className="text-3xl font-bold">{title}</h1>
-          <p className="mt-2 text-muted-foreground">{description}</p>
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-4 sm:py-8">
+      <div className="w-full max-w-md space-y-6 sm:space-y-8 p-4 sm:p-8 border rounded-lg bg-card">
+        <div className="space-y-2 sm:space-y-3 text-center">
+          <div className={`flex justify-end ${!homeHref ? 'hidden' : ''}`}>
+            <Link
+              href={homeHref || '/'}
+              className="text-xs sm:text-sm font-medium text-primary hover:underline"
+            >
+              Home
+            </Link>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold">{title}</h1>
+          <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-muted-foreground">{description}</p>
         </div>
 
-        <div className="space-y-6">
-          {showSearch && (
-            <div className="space-y-2">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                className="w-full px-3 py-2 border rounded-md bg-background"
-                placeholder={searchPlaceholder}
-                aria-label={searchPlaceholder}
-              />
-            </div>
-          )}
+        <div className="space-y-4 sm:space-y-6">
+          <div className={`space-y-2 ${!showSearch ? 'hidden' : ''}`}>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="w-full px-3 py-2 text-sm border rounded-md bg-background"
+              placeholder={searchPlaceholder}
+              aria-label={searchPlaceholder}
+            />
+          </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {children}
           </div>
 
-          {showSubmit && (
-            <button
-              onClick={handleSubmit}
-              className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90"
-            >
-              {submitLabel}
-            </button>
-          )}
+          <button
+            onClick={handleSubmit}
+            className={`w-full px-4 py-2.5 sm:py-2 text-sm sm:text-base bg-primary text-primary-foreground rounded-md hover:opacity-90 active:opacity-75 touch-manipulation ${!showSubmit ? 'hidden' : ''}`}
+          >
+            {submitLabel}
+          </button>
         </div>
       </div>
     </div>

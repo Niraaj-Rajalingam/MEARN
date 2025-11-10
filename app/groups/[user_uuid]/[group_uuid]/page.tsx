@@ -4,14 +4,14 @@ import GroupMembersClient from './GroupMembersClient';
 import { fetchGroupWithMembersAction } from './actions';
 
 type Params = {
-  params: {
+  params: Promise<{
     user_uuid: string;
     group_uuid: string;
-  };
+  }>;
 };
 
 export default async function GroupMembersPage({ params }: Params) {
-  const { user_uuid, group_uuid } = params;
+  const { user_uuid, group_uuid } = await params;
   const payload = await fetchGroupWithMembersAction(group_uuid);
 
   if (!payload.success || !payload.group) {

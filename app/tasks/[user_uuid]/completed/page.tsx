@@ -3,8 +3,8 @@ import TaskListClient from './TaskListClient';
 import { fetchTasksByStatusAction } from './actions';
 
 type PageProps = {
-  params: { user_uuid: string };
-  searchParams?: { group?: string; groupName?: string; status?: string; page?: string };
+  params: Promise<{ user_uuid: string }>;
+  searchParams?: Promise<{ group?: string; groupName?: string; status?: string; page?: string }>;
 };
 
 const statusConfig = {
@@ -23,11 +23,12 @@ const statusConfig = {
 };
 
 export default async function TasksFilterPage({ params, searchParams }: PageProps) {
-  const { user_uuid } = params;
-  const groupUuid = searchParams?.group || null;
-  const groupName = searchParams?.groupName;
-  const status = (searchParams?.status as 'completed' | 'cancelled') || 'completed';
-  const page = Number.parseInt(searchParams?.page || '1', 10);
+  const { user_uuid } = await params;
+  const searchParamsResolved = await searchParams;
+  const groupUuid = searchParamsResolved?.group || null;
+  const groupName = searchParamsResolved?.groupName;
+  const status = (searchParamsResolved?.status as 'completed' | 'cancelled') || 'completed';
+  const page = Number.parseInt(searchParamsResolved?.page || '1', 10);
 
   const config = statusConfig[status];
   const result = await fetchTasksByStatusAction(user_uuid, status, groupUuid, page);

@@ -7,10 +7,28 @@ import {
 } from "../types/group.type";
 import { poolQuery } from "./database.service";
 
+// crutial bug in getting added to group
 export const createGroup = async (
   groupData: CreateGroupDTO
 ): Promise<Group | undefined> => {
   try {
+    const existingGroup = await poolQuery(
+      `SELECT g.group_uuid FROM groups g
+       JOIN group_members gm ON gm.group_uuid = g.group_uuid
+       WHERE g.group_name = $1
+         AND (g.parent_group_uuid IS NOT DISTINCT FROM $2)
+         AND gm.user_uuid = $3;`,
+      [
+        groupData.group_name,
+        groupData.parent_group_uuid || null,
+        groupData.creator_uuid
+      ]
+    );
+
+    if (existingGroup && existingGroup.length > 0) {
+      throw new Error('A group with this name already exists for the selected parent.');
+    }
+
     const groupResult: Group[] | undefined = await poolQuery(
       `INSERT INTO groups (group_name, parent_group_uuid) 
        VALUES ($1, $2) RETURNING *;`,
@@ -40,15 +58,28 @@ export const createGroup = async (
 }
 
 export const getGroupsForUser = async (
-  user_uuid: UUID
+  user_uuid: UUID,
+  parent_group_uuid?: UUID | null
 ): Promise<Group[] | undefined> => {
   try {
-    const result: Group[] | undefined = await poolQuery(
-      `SELECT g.* FROM groups g
+    const params: any[] = [user_uuid];
+    let query = `SELECT g.* FROM groups g
        JOIN group_members gm ON g.group_uuid = gm.group_uuid
-       WHERE gm.user_uuid = $1;`,
-      [user_uuid]
-    );
+       WHERE gm.user_uuid = $1`;
+
+    if (typeof parent_group_uuid !== 'undefined') {
+      if (parent_group_uuid === null) {
+        query += ` AND g.parent_group_uuid IS NULL`;
+      } else {
+        const nextIndex = params.length + 1;
+        query += ` AND g.parent_group_uuid = $${nextIndex}`;
+        params.push(parent_group_uuid);
+      }
+    }
+
+    query += `;`;
+
+    const result: Group[] | undefined = await poolQuery(query, params);
     return result;
   } catch (error) {
     console.log(`An error occurred getting groups for user ${user_uuid}`);
@@ -142,4 +173,3 @@ export const deleteGroup = async (
     throw error;
   }
 }
-

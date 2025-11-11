@@ -15,14 +15,14 @@ export const login = async (
         loginData.password || null
       ]
     );
-    
+
     const user = result?.[0];
 
     if (user) {
       delete user.user_password;
       return user;
     }
-    
+
     return undefined;
 
   } catch (error) {
@@ -76,9 +76,9 @@ export const findUserByEmail = async (
       `SELECT user_uuid, first_name, last_name, user_email 
       FROM users
       WHERE user_email = $1;`,
-      [ email ]
+      [email]
     );
-    
+
     return result?.[0];
   } catch (error) {
     console.log(`An error occurred searching for user ${email}`);
@@ -95,9 +95,9 @@ export const getUserById = async (
       `SELECT user_uuid, first_name, last_name, user_email 
       FROM users
       WHERE user_uuid = $1;`,
-      [ user_uuid ]
+      [user_uuid]
     );
-    
+
     return result?.[0];
   } catch (error) {
     console.log(`An error occurred getting user ${user_uuid}`);

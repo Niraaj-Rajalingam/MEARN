@@ -1,17 +1,47 @@
 import { Pool } from 'pg';
 
+const getPoolConfig = () => {
+  const env = process.env.NODE_ENV || 'development';
+
+  if (env === 'production') {
+    // Use Neon connection string (recommended)
+    if (process.env.POSTGRES_URL) {
+      return {
+        connectionString: process.env.POSTGRES_URL,
+        ssl: true,
+      };
+    }
+    // Fallback to individual env vars
+    return {
+      user: process.env.POSTGRES_USER || 'postgres',
+      password: process.env.POSTGRES_PASSWORD,
+      host: process.env.POSTGRES_HOST,
+      port: parseInt(process.env.POSTGRES_PORT || '5432', 10),
+      database: process.env.POSTGRES_DATABASE || 'postgres',
+      ssl: true,
+    };
+  } else if (env === 'test') {
+    return {
+      user: 'postgres',
+      password: 'mearn-app-db-test',
+      host: 'localhost',
+      port: 5433,
+      database: 'postgres',
+    };
+  } else {
+    // development
+    return {
+      user: 'postgres',
+      password: 'mearn-app-db',
+      host: 'mearn-database',
+      port: 5432,
+      database: 'postgres',
+    };
+  }
+};
+
 export const pool = new Pool({
-  user: 'postgres',
-  password: process.env.NODE_ENV === 'test'
-    ? 'mearn-app-db-test'
-    : 'mearn-app-db',
-  host: process.env.NODE_ENV === 'test' 
-    ? 'localhost' 
-    : 'mearn-database',
-  port: process.env.NODE_ENV === 'test'
-    ? 5433
-    : 5432,
-  database: 'postgres',
+  ...getPoolConfig(),
   max: 20, // max number of connections
   idleTimeoutMillis: 30000, // max idle time
   connectionTimeoutMillis: 2000, // connection timeout

@@ -1,1 +1,0 @@
-export { TamagotchiCard } from "./TamagotchiCard";

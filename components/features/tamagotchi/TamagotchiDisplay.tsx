@@ -6,6 +6,7 @@ import { getTamagotchiMood, getMoodDescription } from '@/app/utils/tamagotchi.ut
 interface TamagotchiDisplayProps {
   points?: number; // Happiness score from completed tasks
   level?: number;
+  levelProgressMessage?: string;
   lastCompletedTask?: {
     title: string;
     completedAt: Date;
@@ -18,6 +19,7 @@ interface TamagotchiDisplayProps {
 export function TamagotchiDisplay({
   points = 0,
   level = 1,
+  levelProgressMessage,
   lastCompletedTask = null,
   completedTasks = 0,
   incompleteTasks = 0,
@@ -89,7 +91,7 @@ export function TamagotchiDisplay({
       </div>
 
       {/* Stats */}
-      <div className="pt-4 border-t">
+      <div className="pt-4 border-t space-y-4">
         <div className="grid grid-cols-2 gap-4 text-center">
           <div>
             <p className="text-2xl font-bold" style={{ color: userColorHex }}>{points}</p>
@@ -100,6 +102,15 @@ export function TamagotchiDisplay({
             <p className="text-xs text-muted-foreground">Level</p>
           </div>
         </div>
+
+        {/* Level Progress Message */}
+        {levelProgressMessage && (
+          <div className="p-3 border rounded-md bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
+            <p className="text-sm text-center font-semibold text-black dark:text-white">
+              {levelProgressMessage}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

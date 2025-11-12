@@ -26,7 +26,6 @@ export function Header({ user }: HeaderProps) {
                 title="Settings"
                 aria-label="Settings"
               >
-                <Settings className="w-5 h-5" />
               </Link>
             </>
           )}

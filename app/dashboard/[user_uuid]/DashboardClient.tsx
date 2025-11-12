@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import type { Task } from '@/app/types/task.type';
 import type { Group } from '@/app/types/group.type';
@@ -11,9 +11,46 @@ import { TamagotchiDisplay } from '@/components/features/tamagotchi/TamagotchiDi
 import { fetchPendingRequestsAction } from '@/app/friends/[user_uuid]/requests/actions';
 import { searchActiveDashboardTasksAction, getFilteredDashboardTasksAction, deleteGroupAction } from './actions';
 import { useFlashMessage } from '@/app/utils/hooks';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogOverlay,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { findUserByEmailAction, createGroupAction } from '@/app/groups/[user_uuid]/add/actions';
+import { createTaskAction } from '@/app/tasks/[user_uuid]/add/actions';
+import { isEmail } from '@/app/utils/validation';
+import { Box, Container } from 'lucide-react';
 
 type DashboardClientProps = {
   userUuid: string;
+};
+
+type AddedMember = {
+  user_uuid: string;
+  email: string;
+  label?: string | null;
+};
+
+type GroupFormErrors = {
+  groupName?: string;
+  pendingEmail?: string;
+  general?: string;
+};
+
+type TaskFormErrors = {
+  title?: string;
+  assigneeEmail?: string;
+  dueDate?: string;
+  general?: string;
 };
 
 export default function DashboardClient({ userUuid }: DashboardClientProps) {
@@ -40,18 +77,73 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
   const [deleteGroupUuid, setDeleteGroupUuid] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
+  const [groupName, setGroupName] = useState('');
+  const [pendingGroupEmail, setPendingGroupEmail] = useState('');
+  const [groupMembers, setGroupMembers] = useState<AddedMember[]>([]);
+  const [groupFormErrors, setGroupFormErrors] = useState<GroupFormErrors>({});
+  const [isCheckingMember, setIsCheckingMember] = useState(false);
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskDescription, setTaskDescription] = useState('');
+  const [taskDueDate, setTaskDueDate] = useState('');
+  const [taskPriority, setTaskPriority] = useState<'1' | '2' | '3'>('2');
+  const [taskAssigneeEmail, setTaskAssigneeEmail] = useState('');
+  const [taskFormErrors, setTaskFormErrors] = useState<TaskFormErrors>({});
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
 
   const activeTasks = useMemo(() => (
     tasks.filter(task => task.status !== 'completed' && task.status !== 'cancelled')
   ), [tasks]);
 
+  const allowTaskAssigneeInput = Boolean(selectedGroupUuid);
+
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+
+  const resetGroupForm = useCallback(() => {
+    setGroupName('');
+    setPendingGroupEmail('');
+    setGroupMembers([]);
+    setGroupFormErrors({});
+    setIsCheckingMember(false);
+    setIsCreatingGroup(false);
+  }, []);
+
+  const resetTaskForm = useCallback(() => {
+    setTaskTitle('');
+    setTaskDescription('');
+    setTaskDueDate('');
+    setTaskPriority('2');
+    setTaskAssigneeEmail('');
+    setTaskFormErrors({});
+    setIsCreatingTask(false);
+  }, []);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredTasks(activeTasks);
     }
   }, [activeTasks]);
+
+  useEffect(() => {
+    if (!allowTaskAssigneeInput && taskAssigneeEmail) {
+      setTaskAssigneeEmail('');
+      setTaskFormErrors((prev) => ({ ...prev, assigneeEmail: undefined }));
+    }
+  }, [allowTaskAssigneeInput, taskAssigneeEmail]);
+
+  useEffect(() => {
+    if (!isCreateGroupOpen) {
+      resetGroupForm();
+    }
+  }, [isCreateGroupOpen, resetGroupForm]);
+
+  useEffect(() => {
+    if (!isCreateTaskOpen) {
+      resetTaskForm();
+    }
+  }, [isCreateTaskOpen, resetTaskForm]);
 
   useEffect(() => {
     async function fetchDashboard() {
@@ -154,6 +246,171 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
       setTasks((prevTasks) => prevTasks.filter((task) => task.todo_uuid !== todo_uuid));
     } catch (error) {
       console.error('Unable to delete task:', error);
+    }
+  };
+
+  const handleAddGroupMember = async () => {
+    setGroupFormErrors((prev) => ({ ...prev, pendingEmail: undefined, general: undefined }));
+    const email = pendingGroupEmail.trim().toLowerCase();
+
+    if (!email) {
+      setGroupFormErrors((prev) => ({ ...prev, pendingEmail: 'Enter a user email.' }));
+      return;
+    }
+
+    if (!isEmail(email)) {
+      setGroupFormErrors((prev) => ({ ...prev, pendingEmail: 'Invalid email format.' }));
+      return;
+    }
+
+    if (groupMembers.some((member) => member.email.toLowerCase() === email)) {
+      setGroupFormErrors((prev) => ({ ...prev, pendingEmail: 'This email is already in the list.' }));
+      return;
+    }
+
+    setIsCheckingMember(true);
+    try {
+      const result = await findUserByEmailAction(email);
+
+      if (!result.success) {
+        setGroupFormErrors((prev) => ({
+          ...prev,
+          pendingEmail: result.error || 'Could not verify user. Please try again.',
+        }));
+        return;
+      }
+
+      const label = result.user.name || result.user.email || `User ${result.user.user_uuid}`;
+      setGroupMembers((prev) => [
+        ...prev,
+        {
+          user_uuid: String(result.user.user_uuid),
+          email: result.user.email,
+          label,
+        },
+      ]);
+      setPendingGroupEmail('');
+    } catch (error) {
+      console.error('Failed to verify user email:', error);
+      setGroupFormErrors((prev) => ({ ...prev, general: 'Failed to verify user. Please try again.' }));
+    } finally {
+      setIsCheckingMember(false);
+    }
+  };
+
+  const handleRemoveGroupMember = (email: string) => {
+    setGroupMembers((prev) => prev.filter((member) => member.email.toLowerCase() !== email.toLowerCase()));
+    setGroupFormErrors((prev) => ({ ...prev, pendingEmail: undefined }));
+  };
+
+  const handleCreateGroupSubmit = async () => {
+    setGroupFormErrors((prev) => ({ ...prev, groupName: undefined, general: undefined }));
+
+    if (!groupName.trim()) {
+      setGroupFormErrors((prev) => ({ ...prev, groupName: 'Please enter a group name.' }));
+      return;
+    }
+
+    setIsCreatingGroup(true);
+    try {
+      const result = await createGroupAction({
+        groupName: groupName.trim(),
+        creatorUuid: userUuid,
+        memberEmails: groupMembers.map((member) => member.email),
+      });
+
+      if (!result.success) {
+        setGroupFormErrors((prev) => ({
+          ...prev,
+          general: result.error || 'Failed to create group.',
+        }));
+        return;
+      }
+
+      const newGroup = result.group as Group;
+      setGroups((prev) => [...prev, newGroup]);
+      setSelectedGroupUuid(newGroup.group_uuid);
+      flash('success', `Group "${newGroup.group_name}" created successfully.`);
+      resetGroupForm();
+      setIsCreateGroupOpen(false);
+    } catch (error) {
+      console.error('Unable to create group:', error);
+      setGroupFormErrors((prev) => ({ ...prev, general: 'Failed to create group. Please try again.' }));
+    } finally {
+      setIsCreatingGroup(false);
+    }
+  };
+
+  const handleCreateTaskSubmit = async () => {
+    setTaskFormErrors((prev) => ({
+      ...prev,
+      title: undefined,
+      assigneeEmail: undefined,
+      dueDate: undefined,
+      general: undefined,
+    }));
+
+    if (!taskTitle.trim()) {
+      setTaskFormErrors((prev) => ({ ...prev, title: 'Please enter a task title.' }));
+      return;
+    }
+
+    if (taskDueDate && Number.isNaN(new Date(taskDueDate).getTime())) {
+      setTaskFormErrors((prev) => ({ ...prev, dueDate: 'Enter a valid date.' }));
+      return;
+    }
+
+    const trimmedAssignee = taskAssigneeEmail.trim();
+
+    if (allowTaskAssigneeInput && trimmedAssignee && !isEmail(trimmedAssignee)) {
+      setTaskFormErrors((prev) => ({ ...prev, assigneeEmail: 'Enter a valid email address.' }));
+      return;
+    }
+
+    if (!allowTaskAssigneeInput && trimmedAssignee) {
+      setTaskFormErrors((prev) => ({
+        ...prev,
+        assigneeEmail: 'Select a group before assigning someone else.',
+      }));
+      return;
+    }
+
+    setIsCreatingTask(true);
+    try {
+      const result = await createTaskAction({
+        title: taskTitle.trim(),
+        description: taskDescription.trim(),
+        dueDate: taskDueDate,
+        priority: taskPriority,
+        assigneeEmail: trimmedAssignee || undefined,
+        creatorUuid: userUuid,
+        groupUuid: selectedGroupUuid ? String(selectedGroupUuid) : null,
+      });
+
+      if (!result.success) {
+        setTaskFormErrors((prev) => ({
+          ...prev,
+          general: result.error || 'Failed to create task.',
+        }));
+        return;
+      }
+
+      const createdTask: Task = {
+        ...result.task,
+        created_at: new Date(result.task.created_at),
+        completed_at: result.task.completed_at ? new Date(result.task.completed_at) : undefined,
+        due_date: result.task.due_date ? new Date(result.task.due_date) : undefined,
+      };
+
+      setTasks((prev) => [createdTask, ...prev]);
+      flash('success', `Task "${result.task.title}" created successfully.`);
+      resetTaskForm();
+      setIsCreateTaskOpen(false);
+    } catch (error) {
+      console.error('Unable to create task:', error);
+      setTaskFormErrors((prev) => ({ ...prev, general: 'Failed to create task. Please try again.' }));
+    } finally {
+      setIsCreatingTask(false);
     }
   };
 
@@ -317,23 +574,23 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
     return groups.find(group => group.group_uuid === selectedGroupUuid) || null;
   }, [groups, selectedGroupUuid]);
 
-  const createTaskHref = selectedGroupUuid
-    ? (() => {
-        const paramsObj = new URLSearchParams({ group: String(selectedGroupUuid) });
-        if (selectedGroup?.group_name) {
-          paramsObj.set('groupName', selectedGroup.group_name);
-        }
-        return `/tasks/${userUuid}/add?${paramsObj.toString()}`;
-      })()
-    : `/tasks/${userUuid}/add`;
+  const taskGroupSummary = useMemo(() => {
+    if (selectedGroupUuid) {
+      if (selectedGroup?.group_name) {
+        return `Task will be created inside group "${selectedGroup.group_name}".`;
+      }
+      return 'Task will be created inside the selected group.';
+    }
+    return 'No group selected from dashboard. Task will not belong to a group.';
+  }, [selectedGroup, selectedGroupUuid]);
 
   // Get last completed task for tamagotchi display
   const completedTasks = tasks.filter(t => t.completed_at);
   const lastCompletedTask = completedTasks.length > 0
     ? {
-        title: completedTasks[0].title,
-        completedAt: new Date(completedTasks[0].completed_at!)
-      }
+      title: completedTasks[0].title,
+      completedAt: new Date(completedTasks[0].completed_at!)
+    }
     : null;
   const getViewTasksHref = (status: 'completed' | 'cancelled') => {
     if (selectedGroupUuid) {
@@ -392,12 +649,119 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
       <section className="border rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold mb-4">My Groups</h2>
-          <Link
-            href={`/groups/${userUuid}/add`}
-            className="text-sm text-primary hover:underline"
-          >
-            Create New Group
-          </Link>
+          <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
+            <DialogTrigger asChild>
+              <Button variant="link" className="h-auto px-0 text-sm">
+                Create New Group
+              </Button>
+            </DialogTrigger>
+            <DialogOverlay />
+            <DialogContent className="sm:max-w-xl">
+              <DialogHeader>
+                <DialogTitle>Create New Group</DialogTitle>
+                <DialogDescription>
+                  Name your new group and add members by email. You will be the group admin.
+                </DialogDescription>
+              </DialogHeader>
+              {groupFormErrors.general && (
+                <p className="text-sm text-red-600">{groupFormErrors.general}</p>
+              )}
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <Label htmlFor="group-name-input">Group name</Label>
+                  <Input
+                    id="group-name-input"
+                    value={groupName}
+                    onChange={(e) => {
+                      setGroupName(e.target.value);
+                      if (groupFormErrors.groupName) {
+                        setGroupFormErrors((prev) => ({ ...prev, groupName: undefined }));
+                      }
+                    }}
+                    placeholder="e.g., ECE444 Project"
+                  />
+                  {groupFormErrors.groupName && (
+                    <p className="text-xs text-red-600">{groupFormErrors.groupName}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="group-member-email">Add member by email</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="group-member-email"
+                      type="email"
+                      value={pendingGroupEmail}
+                      onChange={(e) => {
+                        setPendingGroupEmail(e.target.value);
+                        if (groupFormErrors.pendingEmail) {
+                          setGroupFormErrors((prev) => ({ ...prev, pendingEmail: undefined }));
+                        }
+                      }}
+                      placeholder="user@example.com"
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleAddGroupMember}
+                      disabled={isCheckingMember || !pendingGroupEmail.trim()}
+                    >
+                      {isCheckingMember ? 'Checking...' : 'Add'}
+                    </Button>
+                  </div>
+                  {groupFormErrors.pendingEmail && (
+                    <p className="text-xs text-red-600">{groupFormErrors.pendingEmail}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Members added</p>
+                  {groupMembers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No new members added yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {groupMembers.map((member) => (
+                        <div
+                          key={member.email}
+                          className="flex items-center justify-between rounded-md border px-3 py-2"
+                        >
+                          <div>
+                            <p className="font-medium">{member.label || member.email}</p>
+                            <p className="text-xs text-muted-foreground">{member.email}</p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveGroupMember(member.email)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateGroupOpen(false)}
+                  disabled={isCreatingGroup}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleCreateGroupSubmit}
+                  disabled={isCreatingGroup}
+                >
+                  {isCreatingGroup ? 'Creating...' : 'Create Group'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <FlashMessage message={message} kind={messageKind} onDismiss={resetFlash} />
@@ -413,11 +777,10 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
                   key={group.group_uuid}
                   type="button"
                   onClick={() => handleSelectGroup(group.group_uuid)}
-                  className={`text-left px-4 py-3 border rounded-lg transition-all ${
-                    selected
-                      ? 'border-indigo-500 bg-indigo-50 shadow-sm'
-                      : 'border-gray-200 hover:border-indigo-300'
-                  }`}
+                  className={`text-left px-4 py-3 border rounded-lg transition-all ${selected
+                    ? 'border-indigo-500 bg-indigo-50 shadow-sm'
+                    : 'border-gray-200 hover:border-indigo-300'
+                    }`}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-medium text-gray-900">{group.group_name}</span>
@@ -501,14 +864,134 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
       )}
       {/* To-do list section */}
       <section className="border rounded-lg p-6">
-        <div className="flex justify-between items-center mb-4">
+        <div className={`flex justify-between items-center mb-4 ${isCreateTaskOpen ? 'relative z-50' : ''}`}>
           <h2 className="text-xl font-semibold mb-4">My Tasks</h2>
-          <Link
-            href={createTaskHref}
-            className="text-sm text-primary hover:underline"
-          >
-            Create Task
-          </Link>
+          <Dialog open={isCreateTaskOpen} onOpenChange={setIsCreateTaskOpen}>
+            <DialogTrigger asChild>
+              <Button variant="link" className="h-auto px-0 text-sm">
+                Create Task
+              </Button>
+            </DialogTrigger>
+            <DialogOverlay />
+            <DialogContent className="sm:max-w-xl">
+              <DialogHeader>
+                <DialogTitle>Create Task</DialogTitle>
+                <DialogDescription>
+                  Add a task with a due date, priority, and assigned teammate.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="rounded-md border bg-card p-3 text-sm text-muted-foreground">
+                  {taskGroupSummary}
+                </div>
+                {taskFormErrors.general && (
+                  <p className="text-sm text-red-600">{taskFormErrors.general}</p>
+                )}
+                <div className="space-y-1">
+                  <Label htmlFor="task-title-input">Task title</Label>
+                  <Input
+                    id="task-title-input"
+                    value={taskTitle}
+                    onChange={(e) => {
+                      setTaskTitle(e.target.value);
+                      if (taskFormErrors.title) {
+                        setTaskFormErrors((prev) => ({ ...prev, title: undefined }));
+                      }
+                    }}
+                    placeholder="e.g., Finish project outline"
+                  />
+                  {taskFormErrors.title && (
+                    <p className="text-xs text-red-600">{taskFormErrors.title}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="task-description-input">Description</Label>
+                  <Textarea
+                    id="task-description-input"
+                    value={taskDescription}
+                    onChange={(e) => setTaskDescription(e.target.value)}
+                    rows={4}
+                    placeholder="Add extra details for this task"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="task-due-date">Due date</Label>
+                  <Input
+                    id="task-due-date"
+                    type="date"
+                    value={taskDueDate}
+                    onChange={(e) => {
+                      setTaskDueDate(e.target.value);
+                      if (taskFormErrors.dueDate) {
+                        setTaskFormErrors((prev) => ({ ...prev, dueDate: undefined }));
+                      }
+                    }}
+                  />
+                  {taskFormErrors.dueDate && (
+                    <p className="text-xs text-red-600">{taskFormErrors.dueDate}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="task-priority">Priority</Label>
+                  <select
+                    id="task-priority"
+                    value={taskPriority}
+                    onChange={(e) => setTaskPriority(e.target.value as '1' | '2' | '3')}
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="1">High</option>
+                    <option value="2">Medium</option>
+                    <option value="3">Low</option>
+                  </select>
+                </div>
+                {allowTaskAssigneeInput ? (
+                  <div className="space-y-1">
+                    <Label htmlFor="task-assignee-email">Assignee email (optional)</Label>
+                    <Input
+                      id="task-assignee-email"
+                      type="email"
+                      value={taskAssigneeEmail}
+                      onChange={(e) => {
+                        setTaskAssigneeEmail(e.target.value);
+                        if (taskFormErrors.assigneeEmail) {
+                          setTaskFormErrors((prev) => ({ ...prev, assigneeEmail: undefined }));
+                        }
+                      }}
+                      placeholder="member@example.com"
+                    />
+                    {taskFormErrors.assigneeEmail ? (
+                      <p className="text-xs text-red-600">{taskFormErrors.assigneeEmail}</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Only members of this group can be assigned.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-1 rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
+                    Select a group to assign tasks to other members. Without a group, the task will be assigned to you.
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateTaskOpen(false)}
+                  disabled={isCreatingTask}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleCreateTaskSubmit}
+                  disabled={isCreatingTask}
+                >
+                  {isCreatingTask ? 'Creating...' : 'Create Task'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {activeTasks.length > 0 && (

@@ -2,10 +2,19 @@
 
 import { useRouter } from 'next/navigation';
 import { logoutAction } from '@/app/actions/auth';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useTheme } from '@/app/components/ThemeProvider';
+import {
+  COLOR_MODE_OPTIONS,
+  THEME_OPTIONS,
+  type ColorMode,
+  type ThemeName,
+} from '@/app/utils/theme';
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { theme, setTheme, mode, setMode } = useTheme();
 
   const handleLogout = async () => {
     try {
@@ -15,12 +24,13 @@ export default function SettingsPage() {
     }
   };
 
-  const colorThemes = [
-    { value: 'default', label: 'Default', color: 'bg-gradient-to-r from-purple-600 to-purple-700' },
-    { value: 'halloween', label: '🎃 Halloween', color: 'bg-gradient-to-r from-orange-600 to-purple-700' },
-    { value: 'christmas', label: '🎄 Christmas', color: 'bg-gradient-to-r from-red-600 to-green-600' },
-    { value: 'spring', label: '🌸 Spring', color: 'bg-gradient-to-r from-pink-400 to-purple-400' },
-  ];
+  const handleThemeChange = (value: ThemeName) => () => {
+    setTheme(value);
+  };
+
+  const handleModeChange = (value: ColorMode) => () => {
+    setMode(value);
+  };
 
   return (
     <div className="w-full max-w-2xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
@@ -44,16 +54,26 @@ export default function SettingsPage() {
           <div className="mb-4 sm:mb-6 md:mb-8">
             <h3 className="text-xs sm:text-sm font-semibold mb-2 sm:mb-3 md:mb-4">Color Theme</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 sm:gap-2 md:gap-3">
-              {colorThemes.map((themeOption) => (
+              {THEME_OPTIONS.map((themeOption) => (
                 <button
                   key={themeOption.value}
                   type="button"
-                  className="flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-3 md:p-4 rounded-lg border-2 border-border hover:border-primary/50 transition-all"
+                  onClick={handleThemeChange(themeOption.value)}
+                  className={cn(
+                    'relative flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-3 md:p-4 rounded-lg border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                    theme === themeOption.value
+                      ? 'border-primary/70 bg-muted/60 shadow-sm'
+                      : 'border-border hover:border-primary/50'
+                  )}
+                  aria-pressed={theme === themeOption.value}
                 >
-                  <div className={`w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 rounded-lg flex-shrink-0 ${themeOption.color}`} />
+                  <div className={`w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 rounded-lg flex-shrink-0 ${themeOption.previewClass}`} />
                   <span className="text-xs font-medium text-center break-words">
                     {themeOption.label}
                   </span>
+                  {theme === themeOption.value && (
+                    <Check className="absolute top-1 right-1 h-3 w-3 sm:h-4 sm:w-4 text-primary" aria-hidden="true" />
+                  )}
                 </button>
               ))}
             </div>
@@ -63,20 +83,26 @@ export default function SettingsPage() {
           <div>
             <h3 className="text-xs sm:text-sm font-semibold mb-2 sm:mb-3 md:mb-4">Dark Mode</h3>
             <div className="grid grid-cols-2 gap-1.5 sm:gap-2 md:gap-3">
-              <button
-                type="button"
-                className="flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-3 md:p-4 rounded-lg border-2 border-border hover:border-primary/50 transition-all"
-              >
-                <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 rounded-lg flex-shrink-0 bg-gradient-to-r from-yellow-300 to-yellow-400" />
-                <span className="text-xs sm:text-sm font-medium text-center">Light</span>
-              </button>
-              <button
-                type="button"
-                className="flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-3 md:p-4 rounded-lg border-2 border-border hover:border-primary/50 transition-all"
-              >
-                <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 rounded-lg flex-shrink-0 bg-gradient-to-r from-slate-700 to-slate-900" />
-                <span className="text-xs sm:text-sm font-medium text-center">Dark</span>
-              </button>
+              {COLOR_MODE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={handleModeChange(option.value)}
+                  className={cn(
+                    'relative flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-3 md:p-4 rounded-lg border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                    mode === option.value
+                      ? 'border-primary/70 bg-muted/60 shadow-sm'
+                      : 'border-border hover:border-primary/50'
+                  )}
+                  aria-pressed={mode === option.value}
+                >
+                  <div className={`w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 rounded-lg flex-shrink-0 ${option.previewClass}`} />
+                  <span className="text-xs sm:text-sm font-medium text-center">{option.label}</span>
+                  {mode === option.value && (
+                    <Check className="absolute top-1 right-1 h-3 w-3 sm:h-4 sm:w-4 text-primary" aria-hidden="true" />
+                  )}
+                </button>
+              ))}
             </div>
           </div>
         </div>

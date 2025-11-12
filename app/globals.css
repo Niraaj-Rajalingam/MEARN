@@ -26,6 +26,28 @@
   --chart-4: 43 74% 66%;
   --chart-5: 27 87% 67%;
   --radius: 0.5rem;
+
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
 .dark {
@@ -55,9 +77,166 @@
   --chart-5: 340 75% 55%;
 }
 
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root[data-theme='halloween'] {
+  --background: 32 100% 96%;
+  --foreground: 24 84% 14%;
+  --card: 32 94% 98%;
+  --card-foreground: 24 84% 14%;
+  --popover: 32 94% 98%;
+  --popover-foreground: 24 84% 14%;
+  --primary: 28 88% 52%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 274 72% 90%;
+  --secondary-foreground: 274 88% 24%;
+  --muted: 32 50% 88%;
+  --muted-foreground: 24 40% 30%;
+  --accent: 286 62% 90%;
+  --accent-foreground: 286 58% 28%;
+  --destructive: 0 76% 48%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 32 55% 78%;
+  --input: 32 55% 80%;
+  --ring: 28 88% 45%;
+  --chart-1: 28 88% 52%;
+  --chart-2: 274 62% 48%;
+  --chart-3: 14 70% 44%;
+  --chart-4: 294 56% 60%;
+  --chart-5: 42 92% 60%;
+}
+
+.dark[data-theme='halloween'] {
+  --background: 282 54% 10%;
+  --foreground: 32 92% 92%;
+  --card: 282 54% 14%;
+  --card-foreground: 32 92% 92%;
+  --popover: 282 54% 14%;
+  --popover-foreground: 32 92% 92%;
+  --primary: 28 88% 58%;
+  --primary-foreground: 32 96% 10%;
+  --secondary: 274 54% 36%;
+  --secondary-foreground: 48 92% 96%;
+  --muted: 282 35% 22%;
+  --muted-foreground: 32 58% 74%;
+  --accent: 290 48% 42%;
+  --accent-foreground: 46 88% 94%;
+  --destructive: 0 70% 46%;
+  --destructive-foreground: 0 0% 96%;
+  --border: 282 42% 26%;
+  --input: 282 42% 28%;
+  --ring: 28 88% 65%;
+  --chart-1: 28 88% 58%;
+  --chart-2: 274 54% 54%;
+  --chart-3: 14 74% 52%;
+  --chart-4: 294 58% 54%;
+  --chart-5: 42 88% 58%;
+}
+
+:root[data-theme='christmas'] {
+  --background: 136 36% 96%;
+  --foreground: 137 32% 16%;
+  --card: 136 40% 98%;
+  --card-foreground: 137 32% 16%;
+  --popover: 136 40% 98%;
+  --popover-foreground: 137 32% 16%;
+  --primary: 356 72% 45%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 134 34% 42%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 134 22% 86%;
+  --muted-foreground: 134 28% 32%;
+  --accent: 41 90% 55%;
+  --accent-foreground: 40 92% 18%;
+  --destructive: 0 74% 46%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 136 24% 78%;
+  --input: 136 24% 80%;
+  --ring: 356 72% 45%;
+  --chart-1: 356 72% 45%;
+  --chart-2: 134 40% 42%;
+  --chart-3: 41 90% 55%;
+  --chart-4: 200 60% 40%;
+  --chart-5: 24 80% 52%;
+}
+
+.dark[data-theme='christmas'] {
+  --background: 136 34% 12%;
+  --foreground: 138 42% 92%;
+  --card: 136 32% 16%;
+  --card-foreground: 138 42% 92%;
+  --popover: 136 32% 16%;
+  --popover-foreground: 138 42% 92%;
+  --primary: 356 82% 60%;
+  --primary-foreground: 0 0% 12%;
+  --secondary: 133 36% 30%;
+  --secondary-foreground: 0 0% 96%;
+  --muted: 136 28% 24%;
+  --muted-foreground: 136 28% 68%;
+  --accent: 42 78% 50%;
+  --accent-foreground: 32 92% 12%;
+  --destructive: 0 70% 46%;
+  --destructive-foreground: 0 0% 96%;
+  --border: 136 26% 26%;
+  --input: 136 26% 28%;
+  --ring: 356 82% 60%;
+  --chart-1: 356 82% 60%;
+  --chart-2: 133 36% 36%;
+  --chart-3: 42 78% 50%;
+  --chart-4: 200 56% 48%;
+  --chart-5: 24 76% 56%;
+}
+
+:root[data-theme='spring'] {
+  --background: 150 44% 96%;
+  --foreground: 152 30% 18%;
+  --card: 150 46% 98%;
+  --card-foreground: 152 30% 18%;
+  --popover: 150 46% 98%;
+  --popover-foreground: 152 30% 18%;
+  --primary: 320 64% 60%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 187 56% 48%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 150 24% 86%;
+  --muted-foreground: 150 24% 34%;
+  --accent: 94 48% 56%;
+  --accent-foreground: 94 38% 22%;
+  --destructive: 0 74% 46%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 150 26% 78%;
+  --input: 150 26% 80%;
+  --ring: 320 64% 60%;
+  --chart-1: 320 64% 60%;
+  --chart-2: 187 56% 48%;
+  --chart-3: 94 48% 56%;
+  --chart-4: 40 90% 58%;
+  --chart-5: 210 60% 48%;
+}
+
+.dark[data-theme='spring'] {
+  --background: 160 32% 12%;
+  --foreground: 150 40% 90%;
+  --card: 160 28% 16%;
+  --card-foreground: 150 40% 90%;
+  --popover: 160 28% 16%;
+  --popover-foreground: 150 40% 90%;
+  --primary: 320 70% 65%;
+  --primary-foreground: 310 70% 12%;
+  --secondary: 187 44% 36%;
+  --secondary-foreground: 0 0% 94%;
+  --muted: 160 24% 22%;
+  --muted-foreground: 160 22% 70%;
+  --accent: 94 46% 46%;
+  --accent-foreground: 94 70% 16%;
+  --destructive: 0 70% 46%;
+  --destructive-foreground: 0 0% 96%;
+  --border: 160 26% 26%;
+  --input: 160 26% 28%;
+  --ring: 320 70% 65%;
+  --chart-1: 320 70% 65%;
+  --chart-2: 187 44% 42%;
+  --chart-3: 94 46% 46%;
+  --chart-4: 40 86% 52%;
+  --chart-5: 210 58% 46%;
 }
 
 body {

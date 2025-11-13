@@ -388,7 +388,7 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
           <h2 className="text-xl font-semibold">My Tamagotchi</h2>
           <Link
             href={`/friends/${userUuid}/tamagotchis`}
-            className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 text-sm"
+            className="text-sm px-4 py-2 bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] rounded-md hover:opacity-90 transition-opacity"
           >
             View Friend's Tamagotchis
           </Link>

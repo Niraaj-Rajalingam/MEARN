@@ -8,8 +8,9 @@ export default async function DashboardLayout({
     params,
 }: {
     children: React.ReactNode;
-    params: { user_uuid: string };
+    params: Promise<{ user_uuid: string }>;
 }) {
+    const { user_uuid } = await params;
     const user = await getSession();
 
     // redirect to signup if not logged in

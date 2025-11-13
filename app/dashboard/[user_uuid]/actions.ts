@@ -6,11 +6,6 @@ import { getGroupById, deleteGroup } from '@/app/services/group.service';
 import { isUUID } from '@/app/utils/validation';
 import { errorResponse, successResponse } from '@/app/utils/response';
 
-const calculatePaginationOffset = (page: number, pageSize: number = 5): number => {
-  const pageNum = Math.max(1, Number.isNaN(page) ? 1 : page);
-  return (pageNum - 1) * pageSize;
-};
-
 export async function searchActiveDashboardTasksAction(
   userUuid: string,
   keyword: string = '',
@@ -63,8 +58,12 @@ export async function searchActiveDashboardTasksAction(
 export async function getFilteredDashboardTasksAction(
   userUuid: string,
   groupUuid?: string | null,
+<<<<<<< HEAD
   filterType: 'all' | 'assigned_to_me' | 'assigned_by_me' = 'all',
   page: number = 1
+=======
+  filterType: 'all' | 'assigned_to_me' | 'assigned_by_me' = 'all'
+>>>>>>> main
 ) {
   try {
     if (!userUuid || !isUUID(userUuid)) {
@@ -80,6 +79,7 @@ export async function getFilteredDashboardTasksAction(
     }
 
     const userUuidAsUUID = userUuid as unknown as UUID;
+<<<<<<< HEAD
     const pageSize = 5;
     const offset = calculatePaginationOffset(page, pageSize);
 
@@ -113,6 +113,29 @@ export async function getFilteredDashboardTasksAction(
       page,
       pageSize,
       hasMore,
+=======
+    const options = {
+      statuses: ['draft', 'pending', 'in_progress'] as Array<'draft' | 'pending' | 'in_progress' | 'completed' | 'cancelled'>,
+      group_uuid: normalizedGroup,
+    };
+
+    let tasks;
+    switch (filterType) {
+      case 'assigned_to_me':
+        tasks = await getTasksAssignedToUser(userUuidAsUUID, options);
+        break;
+      case 'assigned_by_me':
+        tasks = await getTasksAssignedByUser(userUuidAsUUID, options);
+        break;
+      case 'all':
+      default:
+        tasks = await searchTasksForUser(userUuidAsUUID, options);
+        break;
+    }
+
+    return successResponse({
+      tasks: tasks || [],
+>>>>>>> main
     });
   } catch (error) {
     console.error('getFilteredDashboardTasksAction error:', error);

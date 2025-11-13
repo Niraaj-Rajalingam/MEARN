@@ -66,3 +66,161 @@
     transform: translateY(-15px) rotate(3deg);
   }
 }
+
+/* Crying effect for sad tamagotchi */
+.tear-drop {
+  animation: tear-stream 1.5s linear infinite;
+}
+
+.tear-drop-delayed {
+  animation: tear-stream 1.5s linear 0.5s infinite;
+}
+
+@keyframes tear-stream {
+  0% {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.95;
+  }
+  90% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+}
+
+/* Very sad tamagotchi animation */
+.liquid-stream {
+  animation: liquid-flow 3s ease-out infinite;
+}
+
+@keyframes liquid-flow {
+  0% {
+    transform: rotate(90deg) translate(-7px, 26px) scaleY(0.3);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.8;
+  }
+  85% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: rotate(90deg) translate(-7px, 26px) scaleY(1);
+    opacity: 0.75;
+  }
+}
+
+/* Sparkly/wavy droplet animations - faster and more noticeable */
+.liquid-droplet-1 {
+  animation: droplet-flow-1 1.5s ease-in-out infinite;
+}
+
+.liquid-droplet-2 {
+  animation: droplet-flow-2 1.8s ease-in-out 0.3s infinite;
+}
+
+.liquid-droplet-3 {
+  animation: droplet-flow-3 1.6s ease-in-out 0.6s infinite;
+}
+
+@keyframes droplet-flow-1 {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+}
+
+@keyframes droplet-flow-2 {
+  0% {
+    transform: translateX(0) translateY(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-25px) translateY(2px);
+    opacity: 0;
+  }
+}
+
+@keyframes droplet-flow-3 {
+  0% {
+    transform: translateX(0) translateY(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-18px) translateY(-2px);
+    opacity: 0;
+  }
+}
+
+/* Sparkling puddle animations - moving black outline sparkles */
+.sparkle-star-1 {
+  animation: sparkle-move-1 2s ease-in-out infinite;
+}
+
+.sparkle-star-2 {
+  animation: sparkle-move-2 2.5s ease-in-out 0.5s infinite;
+}
+
+.sparkle-star-3 {
+  animation: sparkle-move-3 2.2s ease-in-out 1s infinite;
+}
+
+@keyframes sparkle-move-1 {
+  0%, 100% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-5px, 2px) scale(1);
+  }
+}
+
+@keyframes sparkle-move-2 {
+  0%, 100% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(3px, -3px) scale(1);
+  }
+}
+
+@keyframes sparkle-move-3 {
+  0%, 100% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-2px, -2px) scale(1);
+  }
+}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import FlashMessage from '@/app/components/FlashMessage';
 import { addMemberToGroupAction, removeMembersFromGroupAction, sendFriendRequestsToMembersAction } from './actions';
 import { useFlashMessage } from '@/app/utils/hooks';
@@ -278,6 +279,14 @@ export default function GroupMembersClient({
         </>
       )}
 
+      <div className="mt-6">
+        <Link
+          href={`/dashboard/${userUuid}`}
+          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          ← Back to Dashboard
+        </Link>
+      </div>
     </>
   );
 }

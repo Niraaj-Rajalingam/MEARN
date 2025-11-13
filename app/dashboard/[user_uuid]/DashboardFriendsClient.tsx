@@ -117,6 +117,7 @@ export default function DashboardFriendsClient({ userUuid }: DashboardFriendsCli
                     </Link>
                 </article>
             </section>
+            
         </div>
     );
 }

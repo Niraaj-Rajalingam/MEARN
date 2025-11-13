@@ -97,6 +97,8 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
   const [taskFormErrors, setTaskFormErrors] = useState<TaskFormErrors>({});
   const [isCreatingTask, setIsCreatingTask] = useState(false);
 
+  let pendingCount = 0;
+
   const activeTasks = useMemo(() => (
     tasks.filter(task => task.status !== 'completed' && task.status !== 'cancelled')
   ), [tasks]);
@@ -608,153 +610,9 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
 
 
-      <div className="grid gap-2 sm:gap-4 md:gap-6 md:grid-cols-2 auto-rows-max">
-        {/* Tamagotchi display section */}
-        <section className="border rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">My Tamagotchi</h2>
-          <TamagotchiDisplay
-            points={tamagotchiStats.happiness_score}
-            level={tamagotchi?.level || 1}
-            lastCompletedTask={lastCompletedTask}
-            completedTasks={tamagotchiStats.completed_tasks}
-            incompleteTasks={tamagotchiStats.incomplete_tasks}
-            userColor={userColor}
-          />
-        </section>
-        {/* To-do list section */}
-        <section className="border rounded-lg p-6">
-          <div className={`flex justify-between items-center mb-4 ${isCreateTaskOpen ? 'relative z-50' : ''}`}>
-            <h2 className="text-xl font-semibold mb-4">My Tasks</h2>
-            <Dialog open={isCreateTaskOpen} onOpenChange={setIsCreateTaskOpen}>
-              <DialogTrigger asChild>
-                <Button variant="link" className="h-auto px-0 text-sm">
-                  Create Task
-                </Button>
-              </DialogTrigger>
-              <DialogOverlay />
-              <DialogContent className="sm:max-w-xl">
-                <DialogHeader>
-                  <DialogTitle>Create Task</DialogTitle>
-                  <DialogDescription>
-                    Add a task with a due date, priority, and assigned teammate.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="rounded-md border bg-card p-3 text-sm text-muted-foreground">
-                    {taskGroupSummary}
-                  </div>
-                  {taskFormErrors.general && (
-                    <p className="text-sm text-red-600">{taskFormErrors.general}</p>
-                  )}
-                  <div className="space-y-1">
-                    <Label htmlFor="task-title-input">Task title</Label>
-                    <Input
-                      id="task-title-input"
-                      value={taskTitle}
-                      onChange={(e) => {
-                        setTaskTitle(e.target.value);
-                        if (taskFormErrors.title) {
-                          setTaskFormErrors((prev) => ({ ...prev, title: undefined }));
-                        }
-                      }}
-                      placeholder="e.g., Finish project outline"
-                    />
-                    {taskFormErrors.title && (
-                      <p className="text-xs text-red-600">{taskFormErrors.title}</p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="task-description-input">Description</Label>
-                    <Textarea
-                      id="task-description-input"
-                      value={taskDescription}
-                      onChange={(e) => setTaskDescription(e.target.value)}
-                      rows={4}
-                      placeholder="Add extra details for this task"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="task-due-date">Due date</Label>
-                    <Input
-                      id="task-due-date"
-                      type="date"
-                      value={taskDueDate}
-                      onChange={(e) => {
-                        setTaskDueDate(e.target.value);
-                        if (taskFormErrors.dueDate) {
-                          setTaskFormErrors((prev) => ({ ...prev, dueDate: undefined }));
-                        }
-                      }}
-                    />
-                    {taskFormErrors.dueDate && (
-                      <p className="text-xs text-red-600">{taskFormErrors.dueDate}</p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="task-priority">Priority</Label>
-                    <select
-                      id="task-priority"
-                      value={taskPriority}
-                      onChange={(e) => setTaskPriority(e.target.value as '1' | '2' | '3')}
-                      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    >
-                      <option value="1">High</option>
-                      <option value="2">Medium</option>
-                      <option value="3">Low</option>
-                    </select>
-                  </div>
-                  {allowTaskAssigneeInput ? (
-                    <div className="space-y-1">
-                      <Label htmlFor="task-assignee-email">Assignee email (optional)</Label>
-                      <Input
-                        id="task-assignee-email"
-                        type="email"
-                        value={taskAssigneeEmail}
-                        onChange={(e) => {
-                          setTaskAssigneeEmail(e.target.value);
-                          if (taskFormErrors.assigneeEmail) {
-                            setTaskFormErrors((prev) => ({ ...prev, assigneeEmail: undefined }));
-                          }
-                        }}
-                        placeholder="member@example.com"
-                      />
-                      {taskFormErrors.assigneeEmail ? (
-                        <p className="text-xs text-red-600">{taskFormErrors.assigneeEmail}</p>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">
-                          Only members of this group can be assigned.
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-1 rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
-                      Select a group to assign tasks to other members. Without a group, the task will be assigned to you.
-                    </div>
-                  )}
-                </div>
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsCreateTaskOpen(false)}
-                    disabled={isCreatingTask}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleCreateTaskSubmit}
-                    disabled={isCreatingTask}
-                  >
-                    {isCreatingTask ? 'Creating...' : 'Create Task'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-    <>
+    <div className="grid gap-2 sm:gap-4 md:gap-6 md:grid-cols-2 auto-rows-max">
       {/* Tamagotchi display section */}
       <section className="border rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
@@ -776,289 +634,311 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
           userColor={userColor}
         />
       </section>
+      {/* To-do list section */}
+      <section className="border rounded-lg p-6">
+        <h2 className="text-xl font-semibold mb-4">My Tasks</h2>
+        <Dialog open={isCreateTaskOpen} onOpenChange={setIsCreateTaskOpen}>
+          <DialogTrigger asChild>
+            <Button variant="link" className="h-auto px-0 text-sm">
+              Create Task
+            </Button>
+          </DialogTrigger>
+          <DialogOverlay />
+          <DialogContent className="sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Create Task</DialogTitle>
+              <DialogDescription>
+                Add a task with a due date, priority, and assigned teammate.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="rounded-md border bg-card p-3 text-sm text-muted-foreground">
+                {taskGroupSummary}
+              </div>
+              {taskFormErrors.general && (
+                <p className="text-sm text-red-600">{taskFormErrors.general}</p>
+              )}
+              <div className="space-y-1">
+                <Label htmlFor="task-title-input">Task title</Label>
+                <Input
+                  id="task-title-input"
+                  value={taskTitle}
+                  onChange={(e) => {
+                    setTaskTitle(e.target.value);
+                    if (taskFormErrors.title) {
+                      setTaskFormErrors((prev) => ({ ...prev, title: undefined }));
+                    }
+                  }}
+                  placeholder="e.g., Finish project outline"
+                />
+                {taskFormErrors.title && (
+                  <p className="text-xs text-red-600">{taskFormErrors.title}</p>
+                )}
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="task-description-input">Description</Label>
+                <Textarea
+                  id="task-description-input"
+                  value={taskDescription}
+                  onChange={(e) => setTaskDescription(e.target.value)}
+                  rows={4}
+                  placeholder="Add extra details for this task"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="task-due-date">Due date</Label>
+                <Input
+                  id="task-due-date"
+                  type="date"
+                  value={taskDueDate}
+                  onChange={(e) => {
+                    setTaskDueDate(e.target.value);
+                    if (taskFormErrors.dueDate) {
+                      setTaskFormErrors((prev) => ({ ...prev, dueDate: undefined }));
+                    }
+                  }}
+                />
+                {taskFormErrors.dueDate && (
+                  <p className="text-xs text-red-600">{taskFormErrors.dueDate}</p>
+                )}
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="task-priority">Priority</Label>
+                <select
+                  id="task-priority"
+                  value={taskPriority}
+                  onChange={(e) => setTaskPriority(e.target.value as '1' | '2' | '3')}
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="1">High</option>
+                  <option value="2">Medium</option>
+                  <option value="3">Low</option>
+                </select>
+              </div>
+              {allowTaskAssigneeInput ? (
+                <div className="space-y-1">
+                  <Label htmlFor="task-assignee-email">Assignee email (optional)</Label>
+                  <Input
+                    id="task-assignee-email"
+                    type="email"
+                    value={taskAssigneeEmail}
+                    onChange={(e) => {
+                      setTaskAssigneeEmail(e.target.value);
+                      if (taskFormErrors.assigneeEmail) {
+                        setTaskFormErrors((prev) => ({ ...prev, assigneeEmail: undefined }));
+                      }
+                    }}
+                    placeholder="member@example.com"
+                  />
+                  {taskFormErrors.assigneeEmail ? (
+                    <p className="text-xs text-red-600">{taskFormErrors.assigneeEmail}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Only members of this group can be assigned.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-1 rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
+                  Select a group to assign tasks to other members. Without a group, the task will be assigned to you.
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsCreateTaskOpen(false)}
+                disabled={isCreatingTask}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleCreateTaskSubmit}
+                disabled={isCreatingTask}
+              >
+                {isCreatingTask ? 'Creating...' : 'Create Task'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </section>
 
 
-      {/* Friends section */}
+
+
+
+      {/* Group section */}
       <section className="border rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">My Friends</h2>
-          <div className="flex items-center gap-8">
-            <Link
-              href={`/friends/${userUuid}/requests`}
-              className="text-sm text-indigo-600 hover:underline"
-            >
-              View Friendship Requests ({pendingCount})
-            </Link>
-            <Link
-              href={`/friends/${userUuid}/add`}
-              className="text-sm text-indigo-600 hover:underline"
-            >
-              Add Friend
-            </Link>
-          </div>
-
-          {activeTasks.length > 0 && (
-            <TaskFilter selectedFilter={taskFilter} onFilterChange={setTaskFilter} />
-          )}
-
-          {activeTasks.length > 0 && (
-            <div className="mb-4 relative">
-              <input
-                type="text"
-                placeholder="Search tasks..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-              {isSearching && (
-                <div className="absolute right-3 top-2.5">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-500"></div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {activeTasks.length === 0 ? (
-              <p className="text-gray-500">No tasks yet</p>
-            ) : filteredTasks.length === 0 ? (
-              <p className="text-gray-500">No tasks match your search.</p>
-            ) : (
-              filteredTasks.map(task => (
-                <div
-                  key={task.todo_uuid}
-                  className={`flex justify-between items-center p-4 bg-white rounded-xl shadow-sm border ${task.completed_at ? 'opacity-60 line-through' : ''
-                    }`}
-                >
-                  <button
-                    onClick={() => window.location.href = `/tasks/${userUuid}/edit/${task.todo_uuid}`}
-                    className="flex-1 hover:opacity-75 transition-opacity text-left"
-                  >
-                    <h3 className="font-medium text-gray-900">{task.title}</h3>
-                    <p className="text-sm text-gray-500">
-                      Due {task.due_date?.toDateString()} • Priority: {task.priority}
-                    </p>
-                  </button>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleCompleteTask(task.todo_uuid)}
-                      className="px-4 py-2 rounded-xl font-medium transition-all duration-150 bg-indigo-500 hover:bg-indigo-600 text-white"
-                    >
-                      Complete
-                    </button>
-                    <button
-                      onClick={() => handleDeleteTask(task.todo_uuid)}
-                      className="px-4 py-2 rounded-xl font-medium border border-red-200 text-red-600 hover:bg-red-50"
-                    >
-                      Delete
-                    </button>
+          <h2 className="text-xl font-semibold mb-4">My Groups</h2>
+          <div style={{ zIndex: 1000 }}>
+            <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
+              <DialogTrigger asChild>
+                <Button variant="link" className="h-auto px-0 text-sm">
+                  Create New Group
+                </Button>
+              </DialogTrigger>
+              <DialogOverlay />
+              <DialogContent className="sm:max-w-xl">
+                <DialogHeader>
+                  <DialogTitle>Create New Group</DialogTitle>
+                  <DialogDescription>
+                    Name your new group and add members by email. You will be the group admin.
+                  </DialogDescription>
+                </DialogHeader>
+                {groupFormErrors.general && (
+                  <p className="text-sm text-red-600">{groupFormErrors.general}</p>
+                )}
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <Label htmlFor="group-name-input">Group name</Label>
+                    <Input
+                      id="group-name-input"
+                      value={groupName}
+                      onChange={(e) => {
+                        setGroupName(e.target.value);
+                        if (groupFormErrors.groupName) {
+                          setGroupFormErrors((prev) => ({ ...prev, groupName: undefined }));
+                        }
+                      }}
+                      placeholder="e.g., ECE444 Project"
+                    />
+                    {groupFormErrors.groupName && (
+                      <p className="text-xs text-red-600">{groupFormErrors.groupName}</p>
+                    )}
                   </div>
-                </div>
-              ))
-            )}
-          </div>
-          <div className="mt-4 text-right">
-            <div className="relative inline-block" ref={dropdownRef}>
-              <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="inline-flex justify-center rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                View Tasks
-              </button>
-              {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white border border-gray-200 z-10">
-                  <Link
-                    href={getViewTasksHref('completed')}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-md"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    View Completed Tasks
-                  </Link>
-                  <Link
-                    href={getViewTasksHref('cancelled')}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-md"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    View Deleted Tasks
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* Group section */}
-        <section className="border rounded-lg p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold mb-4">My Groups</h2>
-            <div style={{ zIndex: 1000 }}>
-              <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="link" className="h-auto px-0 text-sm">
-                    Create New Group
-                  </Button>
-                </DialogTrigger>
-                <DialogOverlay />
-                <DialogContent className="sm:max-w-xl">
-                  <DialogHeader>
-                    <DialogTitle>Create New Group</DialogTitle>
-                    <DialogDescription>
-                      Name your new group and add members by email. You will be the group admin.
-                    </DialogDescription>
-                  </DialogHeader>
-                  {groupFormErrors.general && (
-                    <p className="text-sm text-red-600">{groupFormErrors.general}</p>
-                  )}
-                  <div className="space-y-4">
-                    <div className="space-y-1">
-                      <Label htmlFor="group-name-input">Group name</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="group-member-email">Add member by email</Label>
+                    <div className="flex gap-2">
                       <Input
-                        id="group-name-input"
-                        value={groupName}
+                        id="group-member-email"
+                        type="email"
+                        value={pendingGroupEmail}
                         onChange={(e) => {
-                          setGroupName(e.target.value);
-                          if (groupFormErrors.groupName) {
-                            setGroupFormErrors((prev) => ({ ...prev, groupName: undefined }));
+                          setPendingGroupEmail(e.target.value);
+                          if (groupFormErrors.pendingEmail) {
+                            setGroupFormErrors((prev) => ({ ...prev, pendingEmail: undefined }));
                           }
                         }}
-                        placeholder="e.g., ECE444 Project"
+                        placeholder="user@example.com"
+                        className="flex-1"
                       />
-                      {groupFormErrors.groupName && (
-                        <p className="text-xs text-red-600">{groupFormErrors.groupName}</p>
-                      )}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleAddGroupMember}
+                        disabled={isCheckingMember || !pendingGroupEmail.trim()}
+                      >
+                        {isCheckingMember ? 'Checking...' : 'Add'}
+                      </Button>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="group-member-email">Add member by email</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="group-member-email"
-                          type="email"
-                          value={pendingGroupEmail}
-                          onChange={(e) => {
-                            setPendingGroupEmail(e.target.value);
-                            if (groupFormErrors.pendingEmail) {
-                              setGroupFormErrors((prev) => ({ ...prev, pendingEmail: undefined }));
-                            }
-                          }}
-                          placeholder="user@example.com"
-                          className="flex-1"
-                        />
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          onClick={handleAddGroupMember}
-                          disabled={isCheckingMember || !pendingGroupEmail.trim()}
-                        >
-                          {isCheckingMember ? 'Checking...' : 'Add'}
-                        </Button>
-                      </div>
-                      {groupFormErrors.pendingEmail && (
-                        <p className="text-xs text-red-600">{groupFormErrors.pendingEmail}</p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">Members added</p>
-                      {groupMembers.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No new members added yet.</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {groupMembers.map((member) => (
-                            <div
-                              key={member.email}
-                              className="flex items-center justify-between rounded-md border px-3 py-2"
-                            >
-                              <div>
-                                <p className="font-medium">{member.label || member.email}</p>
-                                <p className="text-xs text-muted-foreground">{member.email}</p>
-                              </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveGroupMember(member.email)}
-                              >
-                                Remove
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    {groupFormErrors.pendingEmail && (
+                      <p className="text-xs text-red-600">{groupFormErrors.pendingEmail}</p>
+                    )}
                   </div>
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsCreateGroupOpen(false)}
-                      disabled={isCreatingGroup}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={handleCreateGroupSubmit}
-                      disabled={isCreatingGroup}
-                    >
-                      {isCreatingGroup ? 'Creating...' : 'Create Group'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
-
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Members added</p>
+                    {groupMembers.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No new members added yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {groupMembers.map((member) => (
+                          <div
+                            key={member.email}
+                            className="flex items-center justify-between rounded-md border px-3 py-2"
+                          >
+                            <div>
+                              <p className="font-medium">{member.label || member.email}</p>
+                              <p className="text-xs text-muted-foreground">{member.email}</p>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveGroupMember(member.email)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsCreateGroupOpen(false)}
+                    disabled={isCreatingGroup}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleCreateGroupSubmit}
+                    disabled={isCreatingGroup}
+                  >
+                    {isCreatingGroup ? 'Creating...' : 'Create Group'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
 
-          <FlashMessage message={message} kind={messageKind} onDismiss={resetFlash} />
+        </div>
 
-          {groups.length === 0 ? (
-            <p className="text-gray-500">You are not part of any groups yet.</p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {groups.map(group => {
-                const selected = selectedGroupUuid === group.group_uuid;
-                return (
-                  <button
-                    key={group.group_uuid}
-                    type="button"
-                    onClick={() => handleSelectGroup(group.group_uuid)}
-                    className={`text-left px-4 py-3 border rounded-lg transition-all ${selected
-                      ? 'border-indigo-500 bg-indigo-50 shadow-sm'
-                      : 'border-gray-200 hover:border-indigo-300'
-                      }`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="font-medium text-gray-900">{group.group_name}</span>
-                      {selected && (
-                        <span className="text-xs font-semibold text-indigo-600 border border-indigo-200 rounded-full px-2 py-0.5">
-                          Selected
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          {selectedGroup && (
-            <div className="mt-4 space-y-3">
-              <Link
-                href={`/groups/${userUuid}/${selectedGroup.group_uuid}`}
-                className="inline-flex w-full justify-center rounded-md border border-indigo-200 px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
-              >
-                View Group Members
-              </Link>
-              <button
-                onClick={() => handleDeleteGroupClick(String(selectedGroup.group_uuid))}
-                className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium text-sm"
-              >
-                Delete Group
-              </button>
-            </div>
-          )}
-        </section>
-      </div>
+        <FlashMessage message={message} kind={messageKind} onDismiss={resetFlash} />
 
+        {groups.length === 0 ? (
+          <p className="text-gray-500">You are not part of any groups yet.</p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {groups.map(group => {
+              const selected = selectedGroupUuid === group.group_uuid;
+              return (
+                <button
+                  key={group.group_uuid}
+                  type="button"
+                  onClick={() => handleSelectGroup(group.group_uuid)}
+                  className={`text-left px-4 py-3 border rounded-lg transition-all ${selected
+                    ? 'border-indigo-500 bg-indigo-50 shadow-sm'
+                    : 'border-gray-200 hover:border-indigo-300'
+                    }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-medium text-gray-900">{group.group_name}</span>
+                    {selected && (
+                      <span className="text-xs font-semibold text-indigo-600 border border-indigo-200 rounded-full px-2 py-0.5">
+                        Selected
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {selectedGroup && (
+          <div className="mt-4 space-y-3">
+            <Link
+              href={`/groups/${userUuid}/${selectedGroup.group_uuid}`}
+              className="inline-flex w-full justify-center rounded-md border border-indigo-200 px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
+            >
+              View Group Members
+            </Link>
+            <button
+              onClick={() => handleDeleteGroupClick(String(selectedGroup.group_uuid))}
+              className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium text-sm"
+            >
+              Delete Group
+            </button>
+          </div>
+        )}
+      </section>
       {/* Delete group confirmation modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

@@ -1,24 +1,13 @@
-/**
- * Determine the Tamagotchi's mood based on experience points
- *
- * Point thresholds:
- * - very_sad: points < -5 (many incomplete high-priority tasks)
- * - sad: -5 <= points < 0 (some incomplete tasks)
- * - neutral: points === 0 (balanced or no tasks)
- * - happy: 0 < points <= 10 (more completed than incomplete)
- * - very_happy: points > 10 (many completed high-priority tasks)
- */
+// Get tamagotchi mood based on happiness score (0-10)
 export function getTamagotchiMood(points: number): 'very_sad' | 'sad' | 'neutral' | 'happy' | 'very_happy' {
-  if (points < -5) return 'very_sad';
-  if (points < 0) return 'sad';
-  if (points === 0) return 'neutral';
-  if (points <= 10) return 'happy';
+  if (points <= 2) return 'very_sad';
+  if (points < 4) return 'sad';
+  if (points < 6) return 'neutral';
+  if (points < 8) return 'happy';
   return 'very_happy';
 }
 
-/**
- * Get a description of the Tamagotchi's current mood
- */
+// Get mood description
 export function getMoodDescription(mood: 'very_sad' | 'sad' | 'neutral' | 'happy' | 'very_happy'): string {
   switch (mood) {
     case 'very_sad':
@@ -34,9 +23,7 @@ export function getMoodDescription(mood: 'very_sad' | 'sad' | 'neutral' | 'happy
   }
 }
 
-/**
- * Get color scheme based on mood
- */
+// Get colors for mood
 export function getMoodColors(mood: 'very_sad' | 'sad' | 'neutral' | 'happy' | 'very_happy'): {
   primary: string;
   secondary: string;

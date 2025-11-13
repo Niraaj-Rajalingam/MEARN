@@ -3,6 +3,7 @@ import { searchTasksForUser } from '@/app/services/task.service';
 import { getTamagotchisForUser, getTamagotchiStats } from '@/app/services/tamagotchi.service';
 import { poolQuery } from '@/app/services/database.service';
 import { getGroupsForUser } from '@/app/services/group.service';
+import { calculateUserLevel, updateUserLevel, getLevelProgressMessage } from '@/app/services/level.service';
 import { UUID } from 'crypto';
 import { isUUID } from '@/app/utils/validation';
 
@@ -11,7 +12,7 @@ export async function GET(
   { params }: { params: Promise<{ user_uuid: string }> }
 ) {
   const { user_uuid: userUuidParam } = await params;
-  const user_uuid = userUuidParam as unknown as UUID;
+  const user_uuid = userUuidParam as UUID;
   const { searchParams } = new URL(request.url);
   const groupParam = searchParams.get('group');
   const group_uuid = groupParam && isUUID(groupParam)
@@ -25,8 +26,14 @@ export async function GET(
       group_uuid,
     });
     const groups = await getGroupsForUser(user_uuid, null);
-    const tamagotchis = await getTamagotchisForUser(user_uuid);
     const tamagotchiStats = await getTamagotchiStats(user_uuid);
+
+    // Calculate and update level
+    await updateUserLevel(user_uuid);
+    const levelInfo = await calculateUserLevel(user_uuid);
+
+    // Get updated tamagotchi with new level
+    const tamagotchis = await getTamagotchisForUser(user_uuid);
 
     // Fetch user's color scheme
     const userResult = await poolQuery(
@@ -35,10 +42,20 @@ export async function GET(
     );
     const userColor = userResult?.[0]?.color_scheme || [79, 70, 229]; // Default indigo
 
+    // Generate level progress message
+    const levelProgressMessage = getLevelProgressMessage(
+      levelInfo.level,
+      levelInfo.daysAtNextThreshold,
+      tamagotchiStats?.happiness_score || 0,
+      levelInfo.nextLevelThreshold,
+      levelInfo.daysNeeded
+    );
+
     console.log('Fetched tasks for dashboard:', tasks);
     console.log('Fetched tamagotchi stats:', tamagotchiStats);
     console.log('Fetched user color:', userColor);
     console.log('Fetched groups for dashboard:', groups);
+    console.log('Level info:', levelInfo);
 
     return NextResponse.json({
       user_uuid,
@@ -49,6 +66,10 @@ export async function GET(
         incomplete_tasks: 0,
         total_tasks: 0,
         happiness_score: 0
+      },
+      levelInfo: {
+        ...levelInfo,
+        progressMessage: levelProgressMessage
       },
       userColor: userColor,
       groups: groups ?? [],

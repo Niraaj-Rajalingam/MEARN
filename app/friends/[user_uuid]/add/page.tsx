@@ -1,15 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import GenericPage from '@/components/layout/GenericPage';
 import { sendFriendRequestAction } from './actions';
 
-export default function AddFriendPage({ params }: { params: { user_uuid: string } }) {
+export default function AddFriendPage({ params }: { params: Promise<{ user_uuid: string }> }) {
+  const [currentUserId, setCurrentUserId] = useState<string>('');
   const [friendEmail, setFriendEmail] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const currentUserId = params.user_uuid;
+  useEffect(() => {
+    let active = true;
+
+    const extractParams = async () => {
+      const resolvedParams = await params;
+      if (active) {
+        setCurrentUserId(resolvedParams.user_uuid);
+      }
+    };
+
+    extractParams();
+
+    return () => {
+      active = false;
+    };
+  }, [params]);
 
   const handleSearch = (query: string) => {
     setFriendEmail(query);
@@ -54,6 +70,7 @@ export default function AddFriendPage({ params }: { params: { user_uuid: string 
       description="Enter a friend's email address to send a friend request"
       searchPlaceholder="Enter friend email address"
       submitLabel={isLoading ? 'Sending...' : 'Send Friend Request'}
+      homeHref={`/dashboard/${currentUserId}`}
       onSearch={handleSearch}
       onSubmit={handleSubmit}
       showSearch={true}

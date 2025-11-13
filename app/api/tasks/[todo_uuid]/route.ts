@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server';
 import type { UUID } from 'crypto';
-import { updateTask } from '@/app/services/task.service';
-
-// Cast string to UUID type
-const castToUUID = (val: string): UUID => val as UUID;
+import { updateTask, getTaskById } from '@/app/services/task.service';
+import { updateUserLevel } from '@/app/services/level.service';
+import { updateTodaysHappiness } from '@/app/services/tamagotchi.service';
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ todo_uuid: string }> }
 ) {
-  const { todo_uuid } = await params;
+  const { todo_uuid: todoUuidParam } = await params;
+  const todo_uuid = todoUuidParam as UUID;
 
   try {
     let status = 'cancelled';
@@ -35,7 +35,21 @@ export async function PATCH(
       updatePayload.completed_at = null;
     }
 
-    const updatedTask = await updateTask(castToUUID(todo_uuid), updatePayload);
+    const updatedTask = await updateTask(todo_uuid, updatePayload);
+
+    const task = await getTaskById(todo_uuid);
+
+    if (task && task.assignees) {
+      for (const user_uuid of task.assignees) {
+        try {
+          await updateTodaysHappiness(user_uuid);
+          await updateUserLevel(user_uuid);
+        } catch (error) {
+          console.error(`Failed to update happiness/level for user ${user_uuid}:`, error);
+        }
+      }
+    }
+
     return NextResponse.json({ success: true, task: updatedTask });
   } catch (error) {
     console.error(`Failed to update task ${todo_uuid}:`, error);

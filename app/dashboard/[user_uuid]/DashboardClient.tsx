@@ -29,6 +29,13 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
     total_tasks: 0,
     happiness_score: 0
   });
+  const [levelInfo, setLevelInfo] = useState({
+    level: 1,
+    daysAtThreshold: 0,
+    nextLevelThreshold: null as number | null,
+    daysNeeded: null as number | null,
+    progressMessage: ''
+  });
   const [userColor, setUserColor] = useState<number[]>([79, 70, 229]); // Default indigo
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,6 +84,13 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
         incomplete_tasks: 0,
         total_tasks: 0,
         happiness_score: 0
+      });
+      setLevelInfo(data.levelInfo || {
+        level: 1,
+        daysAtThreshold: 0,
+        nextLevelThreshold: null,
+        daysNeeded: null,
+        progressMessage: ''
       });
       setUserColor(data.userColor || [79, 70, 229]);
     }
@@ -134,6 +148,27 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
             : t
         )
       );
+
+      // Refresh dashboard to update happiness score and level
+      const query = selectedGroupUuid ? `?group=${selectedGroupUuid}` : '';
+      const dashboardRes = await fetch(`/api/dashboard/${userUuid}${query}`);
+      if (dashboardRes.ok) {
+        const dashboardData = await dashboardRes.json();
+        setTamagotchi(dashboardData.tamagotchi || null);
+        setTamagotchiStats(dashboardData.tamagotchiStats || {
+          completed_tasks: 0,
+          incomplete_tasks: 0,
+          total_tasks: 0,
+          happiness_score: 0
+        });
+        setLevelInfo(dashboardData.levelInfo || {
+          level: 1,
+          daysAtThreshold: 0,
+          nextLevelThreshold: null,
+          daysNeeded: null,
+          progressMessage: ''
+        });
+      }
     } catch (error) {
       console.error('Unable to complete task:', error);
     }
@@ -249,7 +284,6 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
   // Handle search with debounce
   useEffect(() => {
     if (!searchQuery.trim()) {
-      setFilteredTasks(activeTasks);
       setIsSearching(false);
       return;
     }
@@ -294,7 +328,7 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
         clearTimeout(debounceTimer.current);
       }
     };
-  }, [searchQuery, userUuid, selectedGroupUuid, taskFilter]);
+  }, [searchQuery, userUuid, selectedGroupUuid, taskFilter, activeTasks]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -350,10 +384,19 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
     <>
       {/* Tamagotchi display section */}
       <section className="border rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-4">My Tamagotchi</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">My Tamagotchi</h2>
+          <Link
+            href={`/friends/${userUuid}/tamagotchis`}
+            className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 text-sm"
+          >
+            View Friend's Tamagotchis
+          </Link>
+        </div>
         <TamagotchiDisplay
           points={tamagotchiStats.happiness_score}
           level={tamagotchi?.level || 1}
+          levelProgressMessage={levelInfo.progressMessage}
           lastCompletedTask={lastCompletedTask}
           completedTasks={tamagotchiStats.completed_tasks}
           incompleteTasks={tamagotchiStats.incomplete_tasks}

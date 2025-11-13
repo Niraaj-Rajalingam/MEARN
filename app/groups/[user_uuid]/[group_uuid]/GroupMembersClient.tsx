@@ -178,7 +178,7 @@ export default function GroupMembersClient({
         </div>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+          className="inline-flex items-center px-4 py-2 bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] rounded-md hover:opacity-90 transition-opacity"
         >
           {showAddForm ? 'Cancel' : 'Add Member'}
         </button>
@@ -213,7 +213,7 @@ export default function GroupMembersClient({
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               >
                 {isLoading ? 'Adding...' : 'Add Member'}
               </button>
@@ -233,9 +233,8 @@ export default function GroupMembersClient({
                 <li
                   key={String(member.user_uuid)}
                   onClick={() => toggleMemberSelection(String(member.user_uuid))}
-                  className={`flex items-center justify-between px-4 py-3 cursor-pointer transition-colors ${
-                    isSelected ? 'bg-indigo-50' : 'hover:bg-gray-50'
-                  }`}
+                  className={`flex items-center justify-between px-4 py-3 cursor-pointer transition-colors ${isSelected ? 'bg-indigo-50' : 'hover:bg-gray-50'
+                    }`}
                 >
                   <div className="flex items-center gap-3 flex-1">
                     <input
@@ -263,7 +262,7 @@ export default function GroupMembersClient({
             <button
               onClick={handleAddFriends}
               disabled={selectedMembers.size === 0 || isLoading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+              className="flex-1 px-4 py-2 bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity font-medium"
             >
               Add Friend {selectedMembers.size > 0 && `(${selectedMembers.size})`}
             </button>

@@ -353,21 +353,21 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
 
   const createTaskHref = selectedGroupUuid
     ? (() => {
-        const paramsObj = new URLSearchParams({ group: String(selectedGroupUuid) });
-        if (selectedGroup?.group_name) {
-          paramsObj.set('groupName', selectedGroup.group_name);
-        }
-        return `/tasks/${userUuid}/add?${paramsObj.toString()}`;
-      })()
+      const paramsObj = new URLSearchParams({ group: String(selectedGroupUuid) });
+      if (selectedGroup?.group_name) {
+        paramsObj.set('groupName', selectedGroup.group_name);
+      }
+      return `/tasks/${userUuid}/add?${paramsObj.toString()}`;
+    })()
     : `/tasks/${userUuid}/add`;
 
   // Get last completed task for tamagotchi display
   const completedTasks = tasks.filter(t => t.completed_at);
   const lastCompletedTask = completedTasks.length > 0
     ? {
-        title: completedTasks[0].title,
-        completedAt: new Date(completedTasks[0].completed_at!)
-      }
+      title: completedTasks[0].title,
+      completedAt: new Date(completedTasks[0].completed_at!)
+    }
     : null;
   const getViewTasksHref = (status: 'completed' | 'cancelled') => {
     if (selectedGroupUuid) {
@@ -412,13 +412,13 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
           <div className="flex items-center gap-8">
             <Link
               href={`/friends/${userUuid}/requests`}
-              className="text-sm text-indigo-600 hover:underline"
+              className="text-sm text-[hsl(var(--accent))] hover:underline"
             >
               View Friendship Requests ({pendingCount})
             </Link>
             <Link
               href={`/friends/${userUuid}/add`}
-              className="text-sm text-indigo-600 hover:underline"
+              className="text-sm text-[hsl(var(--accent))] hover:underline"
             >
               Add Friend
             </Link>
@@ -426,7 +426,7 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
         </div>
         <Link
           href={`/friends/${userUuid}`}
-          className="block text-center px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600"
+          className="block text-center px-4 py-2 bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] rounded-md hover:opacity-90 transition-opacity"
         >
           View All Friends
         </Link>
@@ -437,7 +437,7 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
           <h2 className="text-xl font-semibold mb-4">My Groups</h2>
           <Link
             href={`/groups/${userUuid}/add`}
-            className="text-sm text-primary hover:underline"
+            className="text-sm text-[hsl(var(--accent))] hover:underline"
           >
             Create New Group
           </Link>
@@ -456,16 +456,15 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
                   key={group.group_uuid}
                   type="button"
                   onClick={() => handleSelectGroup(group.group_uuid)}
-                  className={`text-left px-4 py-3 border rounded-lg transition-all ${
-                    selected
-                      ? 'border-indigo-500 bg-indigo-50 shadow-sm'
-                      : 'border-gray-200 hover:border-indigo-300'
-                  }`}
+                  className={`text-left px-4 py-3 border rounded-lg transition-all ${selected
+                    ? 'border-[hsl(var(--accent))] bg-[hsl(var(--accent))]/10 shadow-sm'
+                    : 'border-gray-200 hover:border-[hsl(var(--accent))]/50'
+                    }`}
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <span className="font-medium text-gray-900">{group.group_name}</span>
+                    <span className="font-medium text-foreground">{group.group_name}</span>
                     {selected && (
-                      <span className="text-xs font-semibold text-indigo-600 border border-indigo-200 rounded-full px-2 py-0.5">
+                      <span className="text-xs font-semibold text-[hsl(var(--accent))] border border-[hsl(var(--accent))]/30 rounded-full px-2 py-0.5">
                         Selected
                       </span>
                     )}
@@ -479,7 +478,7 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
           <div className="mt-4 space-y-3">
             <Link
               href={`/groups/${userUuid}/${selectedGroup.group_uuid}`}
-              className="inline-flex w-full justify-center rounded-md border border-indigo-200 px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
+              className="inline-flex w-full justify-center rounded-md border border-[hsl(var(--accent))]/30 px-4 py-2 text-sm font-medium text-[hsl(var(--accent))] hover:bg-[hsl(var(--accent))]/10"
             >
               View Group Members
             </Link>
@@ -548,7 +547,7 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
           <h2 className="text-xl font-semibold mb-4">My Tasks</h2>
           <Link
             href={createTaskHref}
-            className="text-sm text-primary hover:underline"
+            className="text-sm text-[hsl(var(--accent))] hover:underline"
           >
             Create Task
           </Link>
@@ -599,7 +598,7 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleCompleteTask(task.todo_uuid)}
-                    className="px-4 py-2 rounded-xl font-medium transition-all duration-150 bg-indigo-500 hover:bg-indigo-600 text-white"
+                    className="px-4 py-2 rounded-xl font-medium transition-all duration-150 bg-[hsl(var(--accent))] hover:opacity-90 text-[hsl(var(--accent-foreground))]"
                   >
                     Complete
                   </button>

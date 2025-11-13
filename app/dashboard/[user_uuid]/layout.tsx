@@ -21,10 +21,8 @@ export default async function DashboardLayout({
         <div className="min-h-screen bg-background">
             <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-4 px-3 py-4 sm:gap-6 sm:px-4 md:px-6 lg:px-8">
                 <DashboardNavbar userUuid={user_uuid} />
-                <main className="flex-1 overflow-y-auto">
-                    <div className="grid gap-2 sm:gap-4 md:gap-6 md:grid-cols-2 auto-rows-max">
-                        {children}
-                    </div>
+                <main className="flex-1 overflow-y-auto pb-10">
+                    {children}
                 </main>
             </div>
         </div>

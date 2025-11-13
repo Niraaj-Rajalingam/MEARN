@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LogOut, Settings, LayoutDashboard } from 'lucide-react';
+import { LogOut, Settings, LayoutDashboard, UsersRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logoutAction } from '@/app/actions/auth';
 
@@ -22,6 +22,19 @@ export default function DashboardNavbar({ userUuid }: DashboardNavbarProps) {
                             <span className="flex items-center gap-1.5">
                                 <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
                                 <span className="text-xs sm:text-sm">My Dashboard</span>
+                            </span>
+                        </Link>
+                    </Button>
+                    <Button
+                        asChild
+                        variant="ghost"
+                        size="sm"
+                        className="rounded-full px-3 sm:px-4"
+                    >
+                        <Link href={`/dashboard/${userUuid}/friends`} aria-label="Friends">
+                            <span className="flex items-center gap-1.5">
+                                <UsersRound className="h-4 w-4" aria-hidden="true" />
+                                <span className="text-xs sm:text-sm">Friends</span>
                             </span>
                         </Link>
                     </Button>

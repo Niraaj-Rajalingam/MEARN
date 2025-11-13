@@ -166,7 +166,7 @@ export default function TaskForm({
       description={pageDescription}
       showSearch={false}
       showSubmit={true}
-      homeHref={`/dashboard/${userUuid}`}
+      showBackButton
       submitLabel={submitLabel}
       onSubmit={handleSubmit}
     >

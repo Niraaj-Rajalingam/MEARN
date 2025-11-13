@@ -42,8 +42,8 @@ export default async function TasksFilterPage({ params, searchParams }: PageProp
       title={config.title}
       description={description}
       showSearch={false}
+      showBackButton
       showSubmit={false}
-      homeHref={`/dashboard/${user_uuid}`}
     >
       {!result.success ? (
         <p className="text-sm text-red-600">{result.error ?? `Unable to load ${status} tasks.`}</p>

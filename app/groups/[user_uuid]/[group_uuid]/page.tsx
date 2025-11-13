@@ -26,7 +26,7 @@ export default async function GroupMembersPage({ params }: Params) {
       description="View and manage group members"
       showSearch={false}
       showSubmit={false}
-      homeHref={`/dashboard/${user_uuid}`}
+      showBackButton
     >
       <GroupMembersClient
         userUuid={user_uuid}

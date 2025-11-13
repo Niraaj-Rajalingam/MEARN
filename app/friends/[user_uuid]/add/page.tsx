@@ -70,11 +70,11 @@ export default function AddFriendPage({ params }: { params: Promise<{ user_uuid:
       description="Enter a friend's email address to send a friend request"
       searchPlaceholder="Enter friend email address"
       submitLabel={isLoading ? 'Sending...' : 'Send Friend Request'}
-      homeHref={`/dashboard/${currentUserId}`}
       onSearch={handleSearch}
       onSubmit={handleSubmit}
       showSearch={true}
       showSubmit={true}
+      showBackButton
     >
       <div className="space-y-4">
         {message && (

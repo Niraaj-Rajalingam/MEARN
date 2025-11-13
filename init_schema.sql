@@ -14,6 +14,14 @@ CREATE TABLE users (
     color_scheme INTEGER[] DEFAULT ARRAY[79, 70, 229]  -- RGB array [R, G, B] for user's color theme
 );
 
+CREATE TABLE user_preferences (
+    user_uuid UUID PRIMARY KEY REFERENCES users (user_uuid) ON DELETE CASCADE,
+    theme_mode TEXT DEFAULT 'light' CHECK (theme_mode IN ('light', 'dark', 'system')),
+    accent_color TEXT DEFAULT 'indigo',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE groups (
     group_uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     parent_group_uuid UUID REFERENCES groups (group_uuid) ON DELETE CASCADE,
@@ -84,6 +92,11 @@ INSERT INTO users (first_name, last_name, user_email, user_password, color_schem
     ('Eduardo Jose', 'Sampaio Martins', 'eduardo@gmail.com', 'mypass123', ARRAY[234, 88, 12]),  -- Orange
     ('Matthew', 'Grech', 'matthew@gmail.com', 'mypass123', ARRAY[16, 185, 129]),      -- Green
     ('Areeba', 'Mobeen', 'areeba@gmail.com', 'mypass123', ARRAY[139, 92, 246]);
+
+-- Initialize user preferences with default theme settings
+INSERT INTO user_preferences (user_uuid, theme_mode, accent_color)
+SELECT user_uuid, 'light', 'indigo'
+FROM users;
 
 INSERT INTO groups (group_name) VALUES
     ('ECE454 Project'),

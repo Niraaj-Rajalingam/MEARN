@@ -32,11 +32,10 @@ export default function TaskFilter({ selectedFilter, onFilterChange }: TaskFilte
         <button
           key={option.value}
           onClick={() => onFilterChange(option.value)}
-          className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${
-            selectedFilter === option.value
-              ? 'bg-indigo-600 text-white shadow-sm'
+          className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${selectedFilter === option.value
+              ? 'bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] shadow-sm'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
+            }`}
           title={option.description}
         >
           {option.label}

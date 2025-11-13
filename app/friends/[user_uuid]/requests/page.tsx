@@ -108,7 +108,7 @@ export default function FriendRequestsPage({ params }: { params: Promise<{ user_
       description="Review pending friend requests and choose to accept or decline."
       showSearch={false}
       showSubmit={false}
-      homeHref={`/dashboard/${currentUserId}`}
+      showBackButton
     >
       {message && (
         <div className="rounded-md bg-green-100 p-3 text-sm text-green-800 dark:bg-green-900 dark:text-green-100">

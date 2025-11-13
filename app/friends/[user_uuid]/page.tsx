@@ -101,7 +101,7 @@ export default function FriendsPage({ params }: { params: Promise<{ user_uuid: s
       title="My Friends"
       description="View and manage your friends"
       searchPlaceholder="Search friends..."
-      homeHref={`/dashboard/${currentUserId}`}
+      showBackButton
       onSearch={handleSearch}
       showSearch={true}
       showSubmit={false}

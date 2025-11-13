@@ -8,7 +8,10 @@ import TaskFilter, { type TaskFilterType } from '@/app/components/TaskFilter';
 import FlashMessage from '@/app/components/FlashMessage';
 import type { Tamagotchi } from '@/app/types/tamagotchi.type';
 import { TamagotchiDisplay } from '@/components/features/tamagotchi/TamagotchiDisplay';
+import { TamagotchiCharacter } from '@/components/features/tamagotchi/TamagotchiCharacter';
+import { getTamagotchiMood } from '@/app/utils/tamagotchi.utils';
 import { fetchPendingRequestsAction } from '@/app/friends/[user_uuid]/requests/actions';
+import { fetchFriendsAction, removeFriendAction } from '@/app/friends/[user_uuid]/actions';
 import { searchActiveDashboardTasksAction, getFilteredDashboardTasksAction, deleteGroupAction } from './actions';
 import { useFlashMessage } from '@/app/utils/hooks';
 
@@ -16,11 +19,36 @@ type DashboardClientProps = {
   userUuid: string;
 };
 
+type FriendTamagotchi = {
+  user_uuid: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  color_scheme: number[];
+  tamagotchi: {
+    tamagotchi_uuid: string;
+    level: number;
+    happiness_score: number;
+  } | null;
+  stats: {
+    happiness_score: number;
+    completed_tasks: number;
+    incomplete_tasks: number;
+  };
+  lastCompletedTask: {
+    title: string;
+    completedAt: string;
+  } | null;
+};
+
 export default function DashboardClient({ userUuid }: DashboardClientProps) {
   const { message, messageKind, flash, resetFlash } = useFlashMessage();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
+  const [friends, setFriends] = useState<Array<{ id: string; title: string; subtitle?: string; friend_uuid: string }>>([]);
+  const [friendsTamagotchis, setFriendsTamagotchis] = useState<FriendTamagotchi[]>([]);
+  const [friendsViewMode, setFriendsViewMode] = useState<'list' | 'tamagotchi'>('tamagotchi');
   const [selectedGroupUuid, setSelectedGroupUuid] = useState<Group['group_uuid'] | null>(null);
   const [tamagotchi, setTamagotchi] = useState<Tamagotchi | null>(null);
   const [tamagotchiStats, setTamagotchiStats] = useState({
@@ -124,6 +152,45 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
     };
   }, [userUuid]);
 
+  useEffect(() => {
+    let active = true;
+
+    const loadFriends = async () => {
+      try {
+        // Load list view data
+        const result = await fetchFriendsAction(userUuid);
+        if (!active) return;
+        if (result.success) {
+          setFriends(result.friends);
+        } else {
+          setFriends([]);
+        }
+
+        // Load tamagotchi view data
+        const response = await fetch(`/api/friends/${userUuid}/tamagotchis`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch friends tamagotchis');
+        }
+        const data = await response.json();
+        if (active) {
+          setFriendsTamagotchis(data.friends || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch friends:', error);
+        if (active) {
+          setFriends([]);
+          setFriendsTamagotchis([]);
+        }
+      }
+    };
+
+    loadFriends();
+
+    return () => {
+      active = false;
+    };
+  }, [userUuid]);
+
   const handleCompleteTask = async (todo_uuid: string) => {
     try {
       const res = await fetch(`/api/tasks/${todo_uuid}`, {
@@ -194,6 +261,26 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
 
   const handleSelectGroup = (group_uuid: Group['group_uuid']) => {
     setSelectedGroupUuid((prev) => (prev === group_uuid ? null : group_uuid));
+  };
+
+  const handleRemoveFriend = async (friendId: string) => {
+    try {
+      const result = await removeFriendAction({
+        userUuid: userUuid,
+        friendUuid: friendId,
+      });
+
+      if (!result.success) {
+        flash('error', result.error || 'Failed to remove friend.');
+        return;
+      }
+
+      flash('success', 'Friend removed successfully');
+      setFriends((prev) => prev.filter((friend) => friend.id !== friendId));
+    } catch (err) {
+      console.error('Failed to remove friend:', err);
+      flash('error', 'Failed to remove friend. Please try again.');
+    }
   };
 
   const handleDeleteGroupClick = (groupUuid: string) => {
@@ -353,21 +440,21 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
 
   const createTaskHref = selectedGroupUuid
     ? (() => {
-        const paramsObj = new URLSearchParams({ group: String(selectedGroupUuid) });
-        if (selectedGroup?.group_name) {
-          paramsObj.set('groupName', selectedGroup.group_name);
-        }
-        return `/tasks/${userUuid}/add?${paramsObj.toString()}`;
-      })()
+      const paramsObj = new URLSearchParams({ group: String(selectedGroupUuid) });
+      if (selectedGroup?.group_name) {
+        paramsObj.set('groupName', selectedGroup.group_name);
+      }
+      return `/tasks/${userUuid}/add?${paramsObj.toString()}`;
+    })()
     : `/tasks/${userUuid}/add`;
 
   // Get last completed task for tamagotchi display
   const completedTasks = tasks.filter(t => t.completed_at);
   const lastCompletedTask = completedTasks.length > 0
     ? {
-        title: completedTasks[0].title,
-        completedAt: new Date(completedTasks[0].completed_at!)
-      }
+      title: completedTasks[0].title,
+      completedAt: new Date(completedTasks[0].completed_at!)
+    }
     : null;
   const getViewTasksHref = (status: 'completed' | 'cancelled') => {
     if (selectedGroupUuid) {
@@ -386,12 +473,6 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
       <section className="border rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">My Tamagotchi</h2>
-          <Link
-            href={`/friends/${userUuid}/tamagotchis`}
-            className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 text-sm"
-          >
-            View Friend's Tamagotchis
-          </Link>
         </div>
         <TamagotchiDisplay
           points={tamagotchiStats.happiness_score}
@@ -409,27 +490,97 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
       <section className="border rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">My Friends</h2>
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setFriendsViewMode(friendsViewMode === 'list' ? 'tamagotchi' : 'list')}
+              className="text-sm px-3 py-1.5 bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] rounded-md hover:opacity-90 transition-opacity"
+            >
+              {friendsViewMode === 'list' ? 'Tamagotchi View' : 'List View'}
+            </button>
             <Link
               href={`/friends/${userUuid}/requests`}
-              className="text-sm text-indigo-600 hover:underline"
+              className="text-sm text-[hsl(var(--accent))] hover:underline"
             >
-              View Friendship Requests ({pendingCount})
+              Requests ({pendingCount})
             </Link>
             <Link
               href={`/friends/${userUuid}/add`}
-              className="text-sm text-indigo-600 hover:underline"
+              className="text-sm text-[hsl(var(--accent))] hover:underline"
             >
               Add Friend
             </Link>
           </div>
         </div>
-        <Link
-          href={`/friends/${userUuid}`}
-          className="block text-center px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600"
-        >
-          View All Friends
-        </Link>
+
+        {friendsViewMode === 'list' ? (
+          friends.length === 0 ? (
+            <p className="text-gray-500">No friends yet. Add some friends to get started!</p>
+          ) : (
+            <div className="space-y-3">
+              {friends.map((friend) => (
+                <div
+                  key={friend.id}
+                  className="flex justify-between items-center p-4 bg-white rounded-xl shadow-sm border border-gray-200"
+                >
+                  <div className="flex-1">
+                    <h3 className="font-medium text-gray-900">{friend.title}</h3>
+                    {friend.subtitle && (
+                      <p className="text-sm text-gray-500">{friend.subtitle}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleRemoveFriend(friend.id)}
+                    className="px-4 py-2 rounded-xl font-medium border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )
+        ) : (
+          friendsTamagotchis.length === 0 ? (
+            <p className="text-gray-500">No friends yet. Add some friends to see their tamagotchis!</p>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {friendsTamagotchis.map((friend) => {
+                const friendColor = friend.color_scheme || [79, 70, 229];
+                const displayName = friend.first_name && friend.last_name
+                  ? `${friend.first_name} ${friend.last_name}`
+                  : friend.email;
+
+                return (
+                  <div
+                    key={friend.user_uuid}
+                    className="border rounded-lg p-4 bg-card shadow-sm hover:shadow-md transition-shadow flex flex-col items-center"
+                  >
+                    {friend.tamagotchi ? (
+                      <>
+                        <TamagotchiCharacter
+                          mood={getTamagotchiMood(friend.stats.happiness_score)}
+                          userColor={friendColor}
+                          size={100}
+                        />
+                        <div className="mt-3 text-center">
+                          <p className="font-semibold text-foreground">{displayName}</p>
+                          <p className="text-xs text-muted-foreground mt-1">Level {friend.tamagotchi.level}</p>
+                          <p className="text-sm font-medium mt-1" style={{ color: `rgb(${friendColor[0]}, ${friendColor[1]}, ${friendColor[2]})` }}>
+                            {friend.stats.happiness_score} happiness
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p className="text-sm">{displayName}</p>
+                        <p className="text-xs mt-2">No tamagotchi</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )
+        )}
       </section>
       {/* to-do group section */}
       <section className="border rounded-lg p-6">
@@ -437,7 +588,7 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
           <h2 className="text-xl font-semibold mb-4">My Groups</h2>
           <Link
             href={`/groups/${userUuid}/add`}
-            className="text-sm text-primary hover:underline"
+            className="text-sm text-[hsl(var(--accent))] hover:underline"
           >
             Create New Group
           </Link>
@@ -456,16 +607,15 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
                   key={group.group_uuid}
                   type="button"
                   onClick={() => handleSelectGroup(group.group_uuid)}
-                  className={`text-left px-4 py-3 border rounded-lg transition-all ${
-                    selected
-                      ? 'border-indigo-500 bg-indigo-50 shadow-sm'
-                      : 'border-gray-200 hover:border-indigo-300'
-                  }`}
+                  className={`text-left px-4 py-3 border rounded-lg transition-all ${selected
+                    ? 'border-[hsl(var(--accent))] bg-[hsl(var(--accent))]/10 shadow-sm'
+                    : 'border-gray-200 hover:border-[hsl(var(--accent))]/50'
+                    }`}
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <span className="font-medium text-gray-900">{group.group_name}</span>
+                    <span className="font-medium text-foreground">{group.group_name}</span>
                     {selected && (
-                      <span className="text-xs font-semibold text-indigo-600 border border-indigo-200 rounded-full px-2 py-0.5">
+                      <span className="text-xs font-semibold text-[hsl(var(--accent))] border border-[hsl(var(--accent))]/30 rounded-full px-2 py-0.5">
                         Selected
                       </span>
                     )}
@@ -479,7 +629,7 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
           <div className="mt-4 space-y-3">
             <Link
               href={`/groups/${userUuid}/${selectedGroup.group_uuid}`}
-              className="inline-flex w-full justify-center rounded-md border border-indigo-200 px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
+              className="inline-flex w-full justify-center rounded-md border border-[hsl(var(--accent))]/30 px-4 py-2 text-sm font-medium text-[hsl(var(--accent))] hover:bg-[hsl(var(--accent))]/10"
             >
               View Group Members
             </Link>
@@ -548,7 +698,7 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
           <h2 className="text-xl font-semibold mb-4">My Tasks</h2>
           <Link
             href={createTaskHref}
-            className="text-sm text-primary hover:underline"
+            className="text-sm text-[hsl(var(--accent))] hover:underline"
           >
             Create Task
           </Link>
@@ -599,7 +749,7 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleCompleteTask(task.todo_uuid)}
-                    className="px-4 py-2 rounded-xl font-medium transition-all duration-150 bg-indigo-500 hover:bg-indigo-600 text-white"
+                    className="px-4 py-2 rounded-xl font-medium transition-all duration-150 bg-[hsl(var(--accent))] hover:opacity-90 text-[hsl(var(--accent-foreground))]"
                   >
                     Complete
                   </button>

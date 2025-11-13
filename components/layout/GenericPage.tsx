@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, ReactNode } from 'react';
-import Link from 'next/link';
-
 export interface GenericPageProps {
   title: string;
   description: string;
@@ -12,7 +10,7 @@ export interface GenericPageProps {
   onSubmit?: () => void;
   showSearch?: boolean;
   showSubmit?: boolean;
-  homeHref?: string;
+  showBackButton?: boolean;
   children: ReactNode;
 }
 
@@ -25,7 +23,7 @@ export default function GenericPage({
   onSubmit,
   showSearch = true,
   showSubmit = true,
-  homeHref,
+  showBackButton = true,
   children
 }: GenericPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,13 +46,15 @@ export default function GenericPage({
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-4 sm:py-8">
       <div className="w-full max-w-md space-y-6 sm:space-y-8 p-4 sm:p-8 border rounded-lg bg-card">
         <div className="space-y-2 sm:space-y-3 text-center">
-          <div className={`flex justify-end ${!homeHref ? 'hidden' : ''}`}>
-            <Link
-              href={homeHref || '/'}
-              className="text-xs sm:text-sm font-medium text-primary hover:underline"
+          <div className={`flex justify-start ${!showBackButton ? 'hidden' : ''}`}>
+            <button
+              onClick={() => window.history.back()}
+              className="text-xs sm:text-sm font-medium text-primary hover:underline flex items-center gap-1"
+              aria-label="Go back"
             >
-              Home
-            </Link>
+
+              Back
+            </button>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold">{title}</h1>
           <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-muted-foreground">{description}</p>

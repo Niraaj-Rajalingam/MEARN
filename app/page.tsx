@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+import WelcomePage from './components/WelcomePage';
 
 export default function Home() {
-  redirect('/signup');
+  return <WelcomePage />;
 }

@@ -36,6 +36,19 @@ CREATE TABLE tamagotchis (
     level INTEGER DEFAULT 1
 );
 
+CREATE TABLE happiness_history (
+    history_uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_uuid UUID REFERENCES users (user_uuid) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    happiness_score DECIMAL(3, 1) NOT NULL,
+    completed_tasks INTEGER DEFAULT 0,
+    incomplete_tasks INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_uuid, date)
+);
+
+CREATE INDEX idx_happiness_history_user_date ON happiness_history(user_uuid, date DESC);
+
 CREATE TABLE todos (
     todo_uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     parent_task_uuid UUID REFERENCES todos (todo_uuid) ON DELETE CASCADE,
@@ -94,7 +107,9 @@ JOIN (
     VALUES
         ('Niraaj', '/images/tamagotchi_1.jpg'),
         ('Ridvik', '/images/tamagotchi_2.jpg'),
-        ('Eduardo Jose', '/images/tamagotchi_3.jpg')
+        ('Eduardo Jose', '/images/tamagotchi_3.jpg'),
+        ('Matthew', '/images/tamagotchi_4.jpg'),
+        ('Areeba', '/images/tamagotchi_5.jpg')
 ) AS t (first_name, image_path)
 ON u.first_name = t.first_name;
 

@@ -1,5 +1,6 @@
 import DashboardClient from './DashboardClient';
 
-export default function DashboardPage({ params }: { params: { user_uuid: string } }) {
-  return <DashboardClient userUuid={params.user_uuid} />;
+export default async function DashboardPage({ params }: { params: Promise<{ user_uuid: string }> }) {
+  const { user_uuid } = await params;
+  return <DashboardClient userUuid={user_uuid} />;
 }

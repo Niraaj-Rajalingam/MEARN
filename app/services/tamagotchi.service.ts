@@ -96,15 +96,7 @@ export const deleteTamagotchi = async (
 
 
 
-// used for displaying the tamagotchi 
-/**
- * Calculate happiness score for a user's Tamagotchi based on tasks in the last 30 days
- * Formula: H = 10 * tanh((2D - N) / (T + 1))
- * Where D = done tasks, N = not done tasks, T = total tasks
- *
- * @param user_uuid - The user's UUID
- * @returns The calculated happiness score (between -10 and 10) or 0 if an error occurs
- */
+// Calculate happiness based on tasks from the last 30 days
 export const calculateTamagotchiPoints = async (
   user_uuid: UUID
 ): Promise<number> => {
@@ -134,26 +126,19 @@ export const calculateTamagotchiPoints = async (
     const N = parseInt(result?.[0]?.incomplete_tasks || '0');
     const T = D + N;
 
-    // Calculate happiness score: H = 10 * tanh((2D - N) / (T + 1))
     const happiness_score = T > 0
-      ? 10 * Math.tanh((2 * D - N) / (T + 1))
-      : 0;
+      ? 5 * Math.tanh((2 * D - N) / (T + 1)) + 5
+      : 5;
 
-    return Math.round(happiness_score * 10) / 10; // Round to 1 decimal
+    return Math.round(happiness_score * 10) / 10;
   } catch (error) {
     console.log(`An error occurred when calculating points for user ${user_uuid}`);
     console.log(error);
-    return 0;
+    return 5;
   }
 }
 
-/**
- * Update the Tamagotchi's experience points based on the user's task completion
- * This should be called whenever a task is completed or uncompleted
- *
- * @param user_uuid - The user's UUID
- * @returns The updated Tamagotchi or undefined if an error occurs
- */
+// Update tamagotchi experience points
 export const updateTamagotchiPoints = async (
   user_uuid: UUID
 ): Promise<Tamagotchi | undefined> => {
@@ -179,17 +164,7 @@ export const updateTamagotchiPoints = async (
   }
 }
 
-/**
- * Get detailed task statistics for a user's Tamagotchi over the last 30 days
- * Uses the happiness formula: H = 10 * tanh((2D - N) / (T + 1))
- * Where:
- *   D = tasks done in last 30 days
- *   N = tasks not done in last 30 days
- *   T = total tasks attempted = D + N
- *
- * @param user_uuid - The user's UUID
- * @returns Object with task statistics and happiness score
- */
+// Get task stats and happiness score for the last 30 days
 export const getTamagotchiStats = async (
   user_uuid: UUID
 ): Promise<{
@@ -220,23 +195,196 @@ export const getTamagotchiStats = async (
       [user_uuid]
     );
 
-    const D = parseInt(result?.[0]?.completed_tasks || '0');  // Done tasks
-    const N = parseInt(result?.[0]?.incomplete_tasks || '0'); // Not done tasks
-    const T = D + N; // Total tasks
+    const D = parseInt(result?.[0]?.completed_tasks || '0');
+    const N = parseInt(result?.[0]?.incomplete_tasks || '0');
+    const T = D + N;
 
-    // Calculate happiness score: H = 10 * tanh((2D - N) / (T + 1))
     const happiness_score = T > 0
-      ? 10 * Math.tanh((2 * D - N) / (T + 1))
-      : 0;
+      ? 5 * Math.tanh((2 * D - N) / (T + 1)) + 5
+      : 5;
 
     return {
       completed_tasks: D,
       incomplete_tasks: N,
       total_tasks: T,
-      happiness_score: Math.round(happiness_score * 10) / 10, // Round to 1 decimal
+      happiness_score: Math.round(happiness_score * 10) / 10,
     };
   } catch (error) {
     console.log(`An error occurred when getting tamagotchi stats for user ${user_uuid}`);
     console.log(error);
+  }
+}
+
+// Save happiness score for a date (upsert)
+export async function saveHappinessHistory(
+  user_uuid: UUID,
+  date: Date,
+  happiness_score: number,
+  completed_tasks: number,
+  incomplete_tasks: number
+): Promise<void> {
+  try {
+    const dateStr = date.toISOString().split('T')[0];
+
+    await poolQuery(
+      `INSERT INTO happiness_history (user_uuid, date, happiness_score, completed_tasks, incomplete_tasks)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (user_uuid, date)
+       DO UPDATE SET
+         happiness_score = $3,
+         completed_tasks = $4,
+         incomplete_tasks = $5,
+         created_at = CURRENT_TIMESTAMP;`,
+      [user_uuid, dateStr, happiness_score, completed_tasks, incomplete_tasks]
+    );
+
+    console.log(`Saved happiness history for user ${user_uuid} on ${dateStr}: ${happiness_score}`);
+  } catch (error) {
+    console.error(`Error saving happiness history:`, error);
+    throw new Error('Failed to save happiness history');
+  }
+}
+
+// Get happiness history for the last N days
+export async function getHappinessHistory(
+  user_uuid: UUID,
+  days: number = 7
+): Promise<Array<{
+  date: string;
+  happiness_score: number;
+  completed_tasks: number;
+  incomplete_tasks: number;
+}>> {
+  try {
+    const result = await poolQuery(
+      `SELECT
+         date::text,
+         happiness_score,
+         completed_tasks,
+         incomplete_tasks
+       FROM happiness_history
+       WHERE user_uuid = $1
+         AND date >= CURRENT_DATE - INTERVAL '${days} days'
+       ORDER BY date ASC;`,
+      [user_uuid]
+    );
+
+    if (!result || result.length === 0) {
+      return [];
+    }
+
+    return result.map(row => ({
+      date: row.date,
+      happiness_score: parseFloat(row.happiness_score),
+      completed_tasks: parseInt(row.completed_tasks || '0'),
+      incomplete_tasks: parseInt(row.incomplete_tasks || '0')
+    }));
+  } catch (error) {
+    console.error(`Error getting happiness history for user ${user_uuid}:`, error);
+    return [];
+  }
+}
+
+// Calculate and save today's happiness score
+export async function updateTodaysHappiness(user_uuid: UUID): Promise<void> {
+  try {
+    const today = new Date();
+
+    const result = await poolQuery(
+      `SELECT
+        COUNT(CASE WHEN status = 'completed' AND completed_at >= NOW() - INTERVAL '30 days' THEN 1 END) as completed_tasks,
+        COUNT(CASE
+          WHEN status IN ('pending', 'in_progress', 'draft')
+          AND created_at >= NOW() - INTERVAL '30 days'
+          THEN 1
+        END) as incomplete_tasks
+      FROM todos t
+      WHERE t.todo_uuid IN (
+        SELECT ta.task_uuid
+        FROM task_assignees ta
+        WHERE ta.user_uuid = $1
+      )
+      AND (
+        (status = 'completed' AND completed_at >= NOW() - INTERVAL '30 days')
+        OR (status IN ('pending', 'in_progress', 'draft') AND created_at >= NOW() - INTERVAL '30 days')
+      );`,
+      [user_uuid]
+    );
+
+    const D = parseInt(result?.[0]?.completed_tasks || '0');
+    const N = parseInt(result?.[0]?.incomplete_tasks || '0');
+    const T = D + N;
+
+    const happiness_score = T > 0
+      ? 5 * Math.tanh((2 * D - N) / (T + 1)) + 5
+      : 5;
+
+    const roundedScore = Math.round(happiness_score * 10) / 10;
+
+    await saveHappinessHistory(user_uuid, today, roundedScore, D, N);
+  } catch (error) {
+    console.error(`Error updating today's happiness for user ${user_uuid}:`, error);
+  }
+}
+
+// Backfill happiness history for the last N days
+export async function backfillHappinessHistory(
+  user_uuid: UUID,
+  days: number = 7
+): Promise<void> {
+  try {
+    const today = new Date();
+
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+
+      const endDate = date;
+      const startDate = new Date(date);
+      startDate.setDate(startDate.getDate() - 30);
+
+      const result = await poolQuery(
+        `SELECT
+          COUNT(CASE
+            WHEN status = 'completed'
+            AND completed_at >= $2
+            AND completed_at <= $3
+            THEN 1
+          END) as completed_tasks,
+          COUNT(CASE
+            WHEN status IN ('pending', 'in_progress', 'draft')
+            AND created_at >= $2
+            AND created_at <= $3
+            THEN 1
+          END) as incomplete_tasks
+        FROM todos t
+        WHERE t.todo_uuid IN (
+          SELECT ta.task_uuid
+          FROM task_assignees ta
+          WHERE ta.user_uuid = $1
+        )
+        AND (
+          (status = 'completed' AND completed_at >= $2 AND completed_at <= $3)
+          OR (status IN ('pending', 'in_progress', 'draft') AND created_at >= $2 AND created_at <= $3)
+        );`,
+        [user_uuid, startDate.toISOString(), endDate.toISOString()]
+      );
+
+      const D = parseInt(result?.[0]?.completed_tasks || '0');
+      const N = parseInt(result?.[0]?.incomplete_tasks || '0');
+      const T = D + N;
+
+      const happiness_score = T > 0
+        ? 5 * Math.tanh((2 * D - N) / (T + 1)) + 5
+        : 5;
+
+      const roundedScore = Math.round(happiness_score * 10) / 10;
+
+      await saveHappinessHistory(user_uuid, date, roundedScore, D, N);
+    }
+
+    console.log(`Backfilled ${days} days of happiness history for user ${user_uuid}`);
+  } catch (error) {
+    console.error(`Error backfilling happiness history for user ${user_uuid}:`, error);
   }
 }

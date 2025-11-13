@@ -61,10 +61,11 @@ export default function SettingsClient({
     };
 
     return (
-        <div className="max-w-2xl mx-auto space-y-8">
-            {message && <FlashMessage message={message} kind={messageKind} onDismiss={resetFlash} />}
+        <div className="col-span-full flex justify-center">
+            <div className="w-full max-w-2xl space-y-8">
+                {message && <FlashMessage message={message} kind={messageKind} onDismiss={resetFlash} />}
 
-            {/* Theme Mode Section */}
+                {/* Theme Mode Section */}
             <section className="rounded-lg border border-border bg-card p-6 space-y-4">
                 <h2 className="text-xl font-semibold text-foreground">Theme Mode</h2>
                 <p className="text-sm text-muted-foreground">
@@ -151,6 +152,7 @@ export default function SettingsClient({
                     {isSaving ? 'Saving...' : 'Save Preferences'}
                 </Button>
             </div>
+        </div>
         </div>
     );
 }

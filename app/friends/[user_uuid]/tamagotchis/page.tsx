@@ -107,12 +107,7 @@ export default function FriendsTamagotchisPage({
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="space-y-4">
-          <Link
-            href={`/dashboard/${userUuid}`}
-            className="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium"
-          >
-            ← Back to Dashboard
-          </Link>
+
           <div>
             <h1 className="text-3xl font-bold">Friends' Tamagotchis</h1>
             <p className="text-muted-foreground mt-1">

@@ -2,11 +2,15 @@
 
 import type { UUID } from 'crypto';
 import { searchTasksForUser, updateTask, deleteTask } from '@/app/services/task.service';
-import { isUUID, isStatusAllowed } from '@/app/utils/validation';
+import { isUUID } from '@/app/utils/validation';
 import { errorResponse, successResponse } from '@/app/utils/response';
-import { calculatePaginationOffset } from '@/app/utils/database';
 
 type TaskStatus = 'completed' | 'cancelled';
+
+const calculatePaginationOffset = (page: number, pageSize: number = 5): number => {
+  const pageNum = Math.max(1, Number.isNaN(page) ? 1 : page);
+  return (pageNum - 1) * pageSize;
+};
 
 export async function fetchTasksByStatusAction(
   userUuid: string,
@@ -19,7 +23,7 @@ export async function fetchTasksByStatusAction(
       return errorResponse('Invalid user id');
     }
 
-    if (!isStatusAllowed(status, ['completed', 'cancelled'])) {
+    if (!['completed', 'cancelled'].includes(status)) {
       return errorResponse('Invalid task status');
     }
 
@@ -33,7 +37,7 @@ export async function fetchTasksByStatusAction(
 
     // Validate and normalize page number
     const pageNum = Math.max(1, Number.isNaN(page) ? 1 : page);
-    const pageSize = 50;
+    const pageSize = 5;
     const offset = calculatePaginationOffset(pageNum, pageSize);
 
     const tasks = await searchTasksForUser(userUuid as unknown as UUID, {
@@ -126,7 +130,7 @@ export async function searchTasksByKeywordAction(
       return errorResponse('Invalid user id');
     }
 
-    if (!isStatusAllowed(status, ['completed', 'cancelled'])) {
+    if (!['completed', 'cancelled'].includes(status)) {
       return errorResponse('Invalid task status');
     }
 

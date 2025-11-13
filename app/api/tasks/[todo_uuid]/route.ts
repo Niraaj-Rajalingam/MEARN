@@ -6,9 +6,10 @@ import { updateTodaysHappiness } from '@/app/services/tamagotchi.service';
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ todo_uuid: UUID }> }
+  { params }: { params: Promise<{ todo_uuid: string }> }
 ) {
-  const { todo_uuid } = await params;
+  const { todo_uuid: todoUuidParam } = await params;
+  const todo_uuid = todoUuidParam as UUID;
 
   try {
     let status = 'cancelled';

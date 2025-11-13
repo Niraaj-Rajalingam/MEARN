@@ -195,7 +195,7 @@ export const searchTasksForUser = async (
     }
 
     if (keyword) {
-      sql += ` AND (t.title ILIKE $${paramIndex} OR t.description ILIKE $${paramIndex})`;
+      sql += ` AND (lower(t.title) ILIKE $${paramIndex} OR lower(t.description) ILIKE $${paramIndex})`;
       queryParams.push(`%${keyword}%`);
       paramIndex++;
     }
@@ -289,7 +289,7 @@ export const getTasksAssignedToUser = async (
     }
 
     if (keyword) {
-      sql += ` AND (t.title ILIKE $${paramIndex} OR t.description ILIKE $${paramIndex})`;
+      sql += ` AND (lower(t.title) ILIKE $${paramIndex} OR lower(t.description) ILIKE $${paramIndex})`;
       queryParams.push(`%${keyword}%`);
       paramIndex++;
     }
@@ -366,7 +366,7 @@ export const getTasksAssignedByUser = async (
     }
 
     if (keyword) {
-      sql += ` AND (t.title ILIKE $${paramIndex} OR t.description ILIKE $${paramIndex})`;
+      sql += ` AND (lower(t.title) ILIKE $${paramIndex} OR lower(t.description) ILIKE $${paramIndex})`;
       queryParams.push(`%${keyword}%`);
       paramIndex++;
     }

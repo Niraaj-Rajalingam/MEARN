@@ -8,6 +8,8 @@ import TaskFilter, { type TaskFilterType } from '@/app/components/TaskFilter';
 import FlashMessage from '@/app/components/FlashMessage';
 import type { Tamagotchi } from '@/app/types/tamagotchi.type';
 import { TamagotchiDisplay } from '@/components/features/tamagotchi/TamagotchiDisplay';
+import { TamagotchiCharacter } from '@/components/features/tamagotchi/TamagotchiCharacter';
+import { getTamagotchiMood } from '@/app/utils/tamagotchi.utils';
 import { fetchPendingRequestsAction } from '@/app/friends/[user_uuid]/requests/actions';
 import { fetchFriendsAction, removeFriendAction } from '@/app/friends/[user_uuid]/actions';
 import { searchActiveDashboardTasksAction, getFilteredDashboardTasksAction, deleteGroupAction } from './actions';
@@ -17,12 +19,36 @@ type DashboardClientProps = {
   userUuid: string;
 };
 
+type FriendTamagotchi = {
+  user_uuid: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  color_scheme: number[];
+  tamagotchi: {
+    tamagotchi_uuid: string;
+    level: number;
+    happiness_score: number;
+  } | null;
+  stats: {
+    happiness_score: number;
+    completed_tasks: number;
+    incomplete_tasks: number;
+  };
+  lastCompletedTask: {
+    title: string;
+    completedAt: string;
+  } | null;
+};
+
 export default function DashboardClient({ userUuid }: DashboardClientProps) {
   const { message, messageKind, flash, resetFlash } = useFlashMessage();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
   const [friends, setFriends] = useState<Array<{ id: string; title: string; subtitle?: string; friend_uuid: string }>>([]);
+  const [friendsTamagotchis, setFriendsTamagotchis] = useState<FriendTamagotchi[]>([]);
+  const [friendsViewMode, setFriendsViewMode] = useState<'list' | 'tamagotchi'>('tamagotchi');
   const [selectedGroupUuid, setSelectedGroupUuid] = useState<Group['group_uuid'] | null>(null);
   const [tamagotchi, setTamagotchi] = useState<Tamagotchi | null>(null);
   const [tamagotchiStats, setTamagotchiStats] = useState({
@@ -131,6 +157,7 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
 
     const loadFriends = async () => {
       try {
+        // Load list view data
         const result = await fetchFriendsAction(userUuid);
         if (!active) return;
         if (result.success) {
@@ -138,10 +165,21 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
         } else {
           setFriends([]);
         }
+
+        // Load tamagotchi view data
+        const response = await fetch(`/api/friends/${userUuid}/tamagotchis`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch friends tamagotchis');
+        }
+        const data = await response.json();
+        if (active) {
+          setFriendsTamagotchis(data.friends || []);
+        }
       } catch (error) {
         console.error('Failed to fetch friends:', error);
         if (active) {
           setFriends([]);
+          setFriendsTamagotchis([]);
         }
       }
     };
@@ -435,12 +473,6 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
       <section className="border rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">My Tamagotchi</h2>
-          <Link
-            href={`/friends/${userUuid}/tamagotchis`}
-            className="text-sm px-4 py-2 bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] rounded-md hover:opacity-90 transition-opacity"
-          >
-            View Friend's Tamagotchis
-          </Link>
         </div>
         <TamagotchiDisplay
           points={tamagotchiStats.happiness_score}
@@ -458,12 +490,18 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
       <section className="border rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">My Friends</h2>
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setFriendsViewMode(friendsViewMode === 'list' ? 'tamagotchi' : 'list')}
+              className="text-sm px-3 py-1.5 bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] rounded-md hover:opacity-90 transition-opacity"
+            >
+              {friendsViewMode === 'list' ? 'Tamagotchi View' : 'List View'}
+            </button>
             <Link
               href={`/friends/${userUuid}/requests`}
               className="text-sm text-[hsl(var(--accent))] hover:underline"
             >
-              View Friendship Requests ({pendingCount})
+              Requests ({pendingCount})
             </Link>
             <Link
               href={`/friends/${userUuid}/add`}
@@ -473,31 +511,75 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
             </Link>
           </div>
         </div>
-        
-        {friends.length === 0 ? (
-          <p className="text-gray-500">No friends yet. Add some friends to get started!</p>
-        ) : (
-          <div className="space-y-3">
-            {friends.map((friend) => (
-              <div
-                key={friend.id}
-                className="flex justify-between items-center p-4 bg-white rounded-xl shadow-sm border border-gray-200"
-              >
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900">{friend.title}</h3>
-                  {friend.subtitle && (
-                    <p className="text-sm text-gray-500">{friend.subtitle}</p>
-                  )}
-                </div>
-                <button
-                  onClick={() => handleRemoveFriend(friend.id)}
-                  className="px-4 py-2 rounded-xl font-medium border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+
+        {friendsViewMode === 'list' ? (
+          friends.length === 0 ? (
+            <p className="text-gray-500">No friends yet. Add some friends to get started!</p>
+          ) : (
+            <div className="space-y-3">
+              {friends.map((friend) => (
+                <div
+                  key={friend.id}
+                  className="flex justify-between items-center p-4 bg-white rounded-xl shadow-sm border border-gray-200"
                 >
-                  Remove
-                </button>
-              </div>
-            ))}
-          </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-gray-900">{friend.title}</h3>
+                    {friend.subtitle && (
+                      <p className="text-sm text-gray-500">{friend.subtitle}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleRemoveFriend(friend.id)}
+                    className="px-4 py-2 rounded-xl font-medium border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )
+        ) : (
+          friendsTamagotchis.length === 0 ? (
+            <p className="text-gray-500">No friends yet. Add some friends to see their tamagotchis!</p>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {friendsTamagotchis.map((friend) => {
+                const friendColor = friend.color_scheme || [79, 70, 229];
+                const displayName = friend.first_name && friend.last_name
+                  ? `${friend.first_name} ${friend.last_name}`
+                  : friend.email;
+
+                return (
+                  <div
+                    key={friend.user_uuid}
+                    className="border rounded-lg p-4 bg-card shadow-sm hover:shadow-md transition-shadow flex flex-col items-center"
+                  >
+                    {friend.tamagotchi ? (
+                      <>
+                        <TamagotchiCharacter
+                          mood={getTamagotchiMood(friend.stats.happiness_score)}
+                          userColor={friendColor}
+                          size={100}
+                        />
+                        <div className="mt-3 text-center">
+                          <p className="font-semibold text-foreground">{displayName}</p>
+                          <p className="text-xs text-muted-foreground mt-1">Level {friend.tamagotchi.level}</p>
+                          <p className="text-sm font-medium mt-1" style={{ color: `rgb(${friendColor[0]}, ${friendColor[1]}, ${friendColor[2]})` }}>
+                            {friend.stats.happiness_score} happiness
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p className="text-sm">{displayName}</p>
+                        <p className="text-xs mt-2">No tamagotchi</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )
         )}
       </section>
       {/* to-do group section */}

@@ -21,14 +21,6 @@ export default function DashboardNavbar({ userUuid }: DashboardNavbarProps) {
                         </Link>
                     </Button>
                     <Button className="transition-transform hover:scale-105">
-                        <Link href={`/dashboard/${userUuid}/friends`} aria-label="Friends">
-                            <span className="flex items-center gap-2">
-                                <UsersRound className="h-5 w-5" aria-hidden="true" strokeWidth={2} />
-                                <span className="text-sm sm:text-base font-medium">Friends</span>
-                            </span>
-                        </Link>
-                    </Button>
-                    <Button className="transition-transform hover:scale-105">
                         <Link href={`/dashboard/${userUuid}/settings`} aria-label="Settings">
                             <span className="flex items-center gap-2">
                                 <Settings className="h-5 w-5" aria-hidden="true" strokeWidth={2} />

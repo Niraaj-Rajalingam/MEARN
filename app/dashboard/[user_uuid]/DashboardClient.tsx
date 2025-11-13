@@ -9,6 +9,7 @@ import FlashMessage from '@/app/components/FlashMessage';
 import type { Tamagotchi } from '@/app/types/tamagotchi.type';
 import { TamagotchiDisplay } from '@/components/features/tamagotchi/TamagotchiDisplay';
 import { fetchPendingRequestsAction } from '@/app/friends/[user_uuid]/requests/actions';
+import { fetchFriendsAction, removeFriendAction } from '@/app/friends/[user_uuid]/actions';
 import { searchActiveDashboardTasksAction, getFilteredDashboardTasksAction, deleteGroupAction } from './actions';
 import { useFlashMessage } from '@/app/utils/hooks';
 
@@ -21,6 +22,7 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
+  const [friends, setFriends] = useState<Array<{ id: string; title: string; subtitle?: string; friend_uuid: string }>>([]);
   const [selectedGroupUuid, setSelectedGroupUuid] = useState<Group['group_uuid'] | null>(null);
   const [tamagotchi, setTamagotchi] = useState<Tamagotchi | null>(null);
   const [tamagotchiStats, setTamagotchiStats] = useState({
@@ -124,6 +126,33 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
     };
   }, [userUuid]);
 
+  useEffect(() => {
+    let active = true;
+
+    const loadFriends = async () => {
+      try {
+        const result = await fetchFriendsAction(userUuid);
+        if (!active) return;
+        if (result.success) {
+          setFriends(result.friends);
+        } else {
+          setFriends([]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch friends:', error);
+        if (active) {
+          setFriends([]);
+        }
+      }
+    };
+
+    loadFriends();
+
+    return () => {
+      active = false;
+    };
+  }, [userUuid]);
+
   const handleCompleteTask = async (todo_uuid: string) => {
     try {
       const res = await fetch(`/api/tasks/${todo_uuid}`, {
@@ -194,6 +223,26 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
 
   const handleSelectGroup = (group_uuid: Group['group_uuid']) => {
     setSelectedGroupUuid((prev) => (prev === group_uuid ? null : group_uuid));
+  };
+
+  const handleRemoveFriend = async (friendId: string) => {
+    try {
+      const result = await removeFriendAction({
+        userUuid: userUuid,
+        friendUuid: friendId,
+      });
+
+      if (!result.success) {
+        flash('error', result.error || 'Failed to remove friend.');
+        return;
+      }
+
+      flash('success', 'Friend removed successfully');
+      setFriends((prev) => prev.filter((friend) => friend.id !== friendId));
+    } catch (err) {
+      console.error('Failed to remove friend:', err);
+      flash('error', 'Failed to remove friend. Please try again.');
+    }
   };
 
   const handleDeleteGroupClick = (groupUuid: string) => {
@@ -424,12 +473,32 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
             </Link>
           </div>
         </div>
-        <Link
-          href={`/friends/${userUuid}`}
-          className="block text-center px-4 py-2 bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] rounded-md hover:opacity-90 transition-opacity"
-        >
-          View All Friends
-        </Link>
+        
+        {friends.length === 0 ? (
+          <p className="text-gray-500">No friends yet. Add some friends to get started!</p>
+        ) : (
+          <div className="space-y-3">
+            {friends.map((friend) => (
+              <div
+                key={friend.id}
+                className="flex justify-between items-center p-4 bg-white rounded-xl shadow-sm border border-gray-200"
+              >
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900">{friend.title}</h3>
+                  {friend.subtitle && (
+                    <p className="text-sm text-gray-500">{friend.subtitle}</p>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleRemoveFriend(friend.id)}
+                  className="px-4 py-2 rounded-xl font-medium border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
       {/* to-do group section */}
       <section className="border rounded-lg p-6">

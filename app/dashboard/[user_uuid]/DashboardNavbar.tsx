@@ -38,7 +38,7 @@ export default function DashboardNavbar({ userUuid }: DashboardNavbarProps) {
                     </Button>
                 </div>
                 <form action={logoutAction} className="flex-shrink-0">
-                    <Button className="transition-transform hover:scale-105">
+                    <Button type="submit" className="transition-transform hover:scale-105">
                         <span className="flex items-center gap-2">
                             <LogOut className="h-5 w-5" aria-hidden="true" strokeWidth={2} />
                             <span className="text-sm sm:text-base font-medium">Logout</span>

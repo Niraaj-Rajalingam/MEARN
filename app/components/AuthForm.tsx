@@ -165,10 +165,27 @@ export default function AuthForm({ mode, onSubmit }: AuthFormProps) {
     : 'Login';
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="w-full max-w-md space-y-8 p-8 border rounded-lg bg-card">
+    <div
+      className="flex min-h-screen items-center justify-center relative overflow-hidden"
+      style={{
+        background: isSignup
+          ? 'radial-gradient(circle at top left, white 0%, rgb(243 232 255) 70%)'
+          : 'radial-gradient(circle at top left, white 0%, rgb(243 232 255) 70%)',
+      }}
+    >
+      <div
+        className="w-full max-w-md space-y-8 p-8 rounded-lg bg-white dark:bg-white"
+        style={{
+          border: '2px solid',
+          borderImage: 'linear-gradient(to bottom right, rgb(0 0 0) 0%, rgb(255 255 255) 100%) 1',
+          borderRadius: '0.5rem',
+        }}
+      >
         <div className="text-center">
           <h1 className="text-3xl font-bold">MEARN Tamagotchi</h1>
+          <p className="mt-4 text-lg font-semibold">
+            {isSignup ? 'Accountability builds consistency' : "Always be committed"}
+          </p>
           <p className="mt-2 text-muted-foreground">
             {isSignup ? 'Create your account' : 'Login to your account'}
           </p>
@@ -237,7 +254,7 @@ export default function AuthForm({ mode, onSubmit }: AuthFormProps) {
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
-                if (touched.password) {
+                if (touched.password || isSignup) {
                   const validationErrors = validateForm();
                   setErrors(validationErrors);
                 }

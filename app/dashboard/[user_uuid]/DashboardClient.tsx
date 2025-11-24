@@ -65,6 +65,7 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
     progressMessage: ''
   });
   const [userColor, setUserColor] = useState<number[]>([79, 70, 229]); // Default indigo
+  const [firstName, setFirstName] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -121,6 +122,7 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
         progressMessage: ''
       });
       setUserColor(data.userColor || [79, 70, 229]);
+      setFirstName(data.firstName || null);
     }
     fetchDashboard();
   }, [userUuid, selectedGroupUuid]);
@@ -472,7 +474,7 @@ export default function DashboardClient({ userUuid }: DashboardClientProps) {
       {/* Tamagotchi display section */}
       <section className="border rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">My Tamagotchi</h2>
+          <h2 className="text-xl font-semibold">{firstName ? `${firstName}'s` : 'My'} Tamagotchi</h2>
         </div>
         <TamagotchiDisplay
           points={tamagotchiStats.happiness_score}

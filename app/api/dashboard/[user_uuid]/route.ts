@@ -35,12 +35,13 @@ export async function GET(
     // Get updated tamagotchi with new level
     const tamagotchis = await getTamagotchisForUser(user_uuid);
 
-    // Fetch user's color scheme
+    // Fetch user's color scheme and name
     const userResult = await poolQuery(
-      `SELECT color_scheme FROM users WHERE user_uuid = $1;`,
+      `SELECT color_scheme, first_name FROM users WHERE user_uuid = $1;`,
       [user_uuid]
     );
     const userColor = userResult?.[0]?.color_scheme || [79, 70, 229]; // Default indigo
+    const firstName = userResult?.[0]?.first_name || 'My';
 
     // Generate level progress message
     const levelProgressMessage = getLevelProgressMessage(
@@ -55,6 +56,7 @@ export async function GET(
     console.log('Fetched tamagotchi stats:', tamagotchiStats);
     console.log('Fetched user color:', userColor);
     console.log('Fetched groups for dashboard:', groups);
+    console.log('Fetched first name:', firstName);
     console.log('Level info:', levelInfo);
 
     return NextResponse.json({
@@ -72,6 +74,7 @@ export async function GET(
         progressMessage: levelProgressMessage
       },
       userColor: userColor,
+      firstName: firstName,
       groups: groups ?? [],
     });
   } catch (error) {
